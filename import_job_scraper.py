@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+"""Import job-scraper output into Solo Empire's raw opportunity backlog.
+
+The scraper remains the discovery system of record. This adapter only reads
+its CSV output and, with an explicit ``--apply``, appends new UNTRIAGED rows to
+the backlog. It never prepares, sends, or submits an application.
+"""
+
+from __future__ import annotations
+
+import argparse
+import csv
+import re
+import sys
+from datetime import date
+from pathlib import Path
+from urllib.parse import urlsplit, urlunsplit
+
+
+ROOT = Path(__file__).resolve().parents[3]
+SCRAPER_ROOT = (
+    ROOT
+    / "domains"
+    / "product"
+    / "engineering"
+    / "book-dev"
+    / "github"
+    / "bookchaowalit"
+    / "book-apps"
+    / "tools"
+    / "book-job-scraping"
+)
+BACKLOG_CSV = ROOT / "docs" / "opportunities" / "data" / "opportunity-backlog.csv"
+BACKLOG_MD = ROOT / "docs" / "opportunities" / "OPPORTUNITY-BACKLOG.md"
+FIELDS = [
+    "id",
+    "lane",
+    "category",
+    "engagement",
+    "title",
+    "location",
+    "compensation",
+    "state",
+    "source_url",
+    "last_verified",
+]
+
+
+def value(row: dict[str, str], *names: str) -> str:
+    for name in names:
+        item = (row.get(name) or "").strip()
+        if item:
+            return item
+    return ""
+
+
+def canonical_url(url: str) -> str:
+    """Remove fragments and tracking query strings for stable deduplication."""
+    url = url.strip()
+    if not url:
+        return ""
+    parts = urlsplit(url)
+    if not parts.scheme or not parts.netloc:
+        return url.rstrip("/").lower()
+    return urlunsplit((parts.scheme.lower(), parts.netloc.lower(), parts.path.rstrip("/"), "", ""))
+
+
+def classify(row: dict[str, str], source: str) -> tuple[str, str]:
+    text = " ".join(
+        (
+            value(row, "title", "company", "name"),
+            value(row, "tags", "skills", "keyword", "category"),
+            value(row, "notes", "description"),
+        )
+    ).lower()
+
+    if any(word in text for word in ("shopify", "ecommerce", "e-commerce", "woocommerce")):
+        return "ecommerce-growth", "Shopify/ecommerce"
+    if any(word in text for word in ("llm", "genai", "gen ai", "openai", "chatbot", "machine learning")) or re.search(r"\bai\b", text):
+        return "engineering-ai", "AI/full-stack"
+    if any(word in text for word in ("api", "integration", "etl", "webhook")):
+        return "engineering-api", "API/integration"
+    if any(word in text for word in ("scrap", "crawler", "crawling", "automation", "n8n", "zapier")):
+        return "leadership-automation", "Automation/scraping"
+    if any(word in text for word in ("seo", "marketing", "content")):
+        return "ecommerce-growth", "SEO/content"
+    if source == "pipeline":
+        return "freelance-marketplace", "Freelance marketplace"
+    return "engineering-general", "Full-stack/software"
+
+
+def input_path(raw: str | None) -> Path | None:
+    if raw:
+        candidate = Path(raw)
+        if not candidate.is_absolute():
+            candidate = ROOT / candidate
+        return candidate
+    for candidate in (
+        SCRAPER_ROOT / "data" / "matched_jobs.csv",
+        SCRAPER_ROOT / "data" / "job_postings.csv",
+        SCRAPER_ROOT / "data" / "pipeline.csv",
+    ):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def source_kind(path: Path) -> str:
+    if path.name == "pipeline.csv":
+        return "pipeline"
+    if path.name == "matched_jobs.csv":
+        return "matched"
+    return "job_postings"
+
+
+def read_rows(path: Path, limit: int) -> list[dict[str, str]]:
+    with path.open(newline="", encoding="utf-8-sig") as handle:
+        return list(csv.DictReader(handle))[:limit]
+
+
+def normalize_row(row: dict[str, str], source: str, item_id: str, verified: str) -> dict[str, str] | None:
+    title = value(row, "title", "job_title", "position", "company", "name")
+    url = value(row, "url", "source_url", "apply_url", "link")
+    if not title or not url:
+        return None
+    lane, category = classify(row, source)
+    location = value(row, "location", "locations", "job_location") or "Location to verify"
+    compensation = value(row, "salary", "compensation", "rate", "budget", "value") or "Rate to verify"
+    if source == "pipeline":
+        engagement = "Freelance marketplace listing"
+    else:
+        engagement = "Remote job listing"
+    return {
+        "id": item_id,
+        "lane": lane,
+        "category": category,
+        "engagement": engagement,
+        "title": re.sub(r"\s+", " ", title).strip(),
+        "location": re.sub(r"\s+", " ", location).strip(),
+        "compensation": re.sub(r"\s+", " ", compensation).strip(),
+        "state": "UNTRIAGED",
+        "source_url": url.strip(),
+        "last_verified": value(row, "posted", "created_date", "scraped_at")[:10] or verified,
+    }
+
+
+def markdown_escape(text: str) -> str:
+    return text.replace("|", "\\|").replace("\n", " ")
+
+
+def markdown_row(row: dict[str, str]) -> str:
+    lane = row["lane"].replace("-", "/").title()
+    source = urlsplit(row["source_url"]).netloc or "source"
+    return (
+        f"| `{row['id']}` | {lane} | {markdown_escape(row['category'])} | "
+        f"{markdown_escape(row['engagement'])} | {markdown_escape(row['title'])} | "
+        f"{markdown_escape(row['location'])} | {markdown_escape(row['compensation'])} | "
+        f"`{row['state']}` | [{source}]({row['source_url']}) |"
+    )
+
+
+def apply_rows(rows: list[dict[str, str]]) -> None:
+    with BACKLOG_CSV.open(newline="", encoding="utf-8") as handle:
+        existing = list(csv.DictReader(handle))
+    with BACKLOG_CSV.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(existing)
+        writer.writerows(rows)
+
+    content = BACKLOG_MD.read_text(encoding="utf-8")
+    marker = "## Live scan notes"
+    if marker not in content:
+        raise RuntimeError(f"Cannot update Markdown backlog: marker {marker!r} is missing")
+    insertion = "\n".join(markdown_row(row) for row in rows) + "\n"
+    content = content.replace(marker, insertion + "\n" + marker, 1)
+    BACKLOG_MD.write_text(content, encoding="utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--input", help="Scraper CSV; defaults to matched_jobs.csv, job_postings.csv, or pipeline.csv")
+    parser.add_argument("--max-rows", type=int, default=200, help="Maximum rows to inspect (default: 200)")
+    parser.add_argument("--apply", action="store_true", help="Append new rows to the CSV and Markdown backlog")
+    args = parser.parse_args()
+
+    path = input_path(args.input)
+    if path is None:
+        print(f"No scraper output found under {SCRAPER_ROOT / 'data'}. Run the scraper first.")
+        return 0
+    if not path.exists():
+        print(f"Input does not exist: {path}", file=sys.stderr)
+        return 2
+
+    with BACKLOG_CSV.open(newline="", encoding="utf-8") as handle:
+        existing = list(csv.DictReader(handle))
+    existing_urls = {canonical_url(row.get("source_url", "")) for row in existing}
+    existing_ids = {row.get("id", "") for row in existing}
+    today = date.today().isoformat()
+    source = source_kind(path)
+    new_rows: list[dict[str, str]] = []
+    sequence = 1
+    for raw in read_rows(path, max(0, args.max_rows)):
+        normalized_url = canonical_url(value(raw, "url", "source_url", "apply_url", "link"))
+        if not normalized_url or normalized_url in existing_urls:
+            continue
+        while f"SCRAPER-{today.replace('-', '')}-{sequence:03d}" in existing_ids:
+            sequence += 1
+        item_id = f"SCRAPER-{today.replace('-', '')}-{sequence:03d}"
+        row = normalize_row(raw, source, item_id, today)
+        sequence += 1
+        if row is None:
+            continue
+        existing_urls.add(normalized_url)
+        existing_ids.add(item_id)
+        new_rows.append(row)
+
+    print(f"Source: {path}")
+    print(f"New backlog rows: {len(new_rows)}")
+    for row in new_rows[:20]:
+        print(f"- {row['id']}: {row['title']} [{row['source_url']}]")
+    if len(new_rows) > 20:
+        print(f"... and {len(new_rows) - 20} more")
+    if args.apply and new_rows:
+        apply_rows(new_rows)
+        print(f"Applied to {BACKLOG_CSV} and {BACKLOG_MD}")
+    elif new_rows:
+        print("Preview only. Re-run with --apply to write the backlog.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
