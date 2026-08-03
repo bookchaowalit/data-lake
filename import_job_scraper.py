@@ -20,7 +20,7 @@ from urllib.parse import urlsplit, urlunsplit
 ROOT = Path(__file__).resolve().parents[3]
 SCRAPER_ROOT = (
     ROOT
-    / "domains"
+    / "projects"
     / "product"
     / "engineering"
     / "book-dev"
