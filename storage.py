@@ -274,6 +274,29 @@ class ObjectStore:
                 break
         return sorted(keys)
 
+    def object_size(self, key: str) -> int:
+        """Return one object's byte size without downloading its contents."""
+        key = _safe_key(key)
+        if self.scheme == "file":
+            assert self.root is not None
+            try:
+                return (self.root / key).stat().st_size
+            except FileNotFoundError as exc:
+                raise StorageError(f"Object not found: {key}") from exc
+
+        assert self.bucket is not None
+        result = self._run_aws([
+            "s3api", "head-object", "--bucket", self.bucket,
+            "--key", self._full_key(key), "--query", "ContentLength",
+            "--output", "text", *self._aws_args(),
+        ])
+        if result.returncode != 0:
+            raise StorageError(f"Object metadata lookup failed for {key}")
+        try:
+            return int(result.stdout.decode("utf-8").strip())
+        except (TypeError, ValueError) as exc:
+            raise StorageError(f"Object metadata returned invalid size for {key}") from exc
+
     def describe(self) -> str:
         if self.scheme == "file":
             assert self.root is not None

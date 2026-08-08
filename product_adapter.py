@@ -173,8 +173,8 @@ def resolve_lake_root(data_lake_uri: str) -> Path:
     uri = data_lake_uri.strip()
     if uri.startswith("s3://"):
         raise LakeUnavailable(
-            "DuckDB Bronze reads currently support local file:// lakes only; "
-            "set SOLO_EMPIRE_DATA_LAKE_URI to a local path for the API pilot"
+            "This operation requires a local lake path; use read_bronze_rows() "
+            "for direct s3:// Bronze reads"
         )
     if uri.startswith("file://"):
         parsed = urlparse(uri)
@@ -183,6 +183,38 @@ def resolve_lake_root(data_lake_uri: str) -> Path:
             path = f"/{parsed.netloc}{path}"
         return Path(path or ".").expanduser().resolve()
     return Path(uri).expanduser().resolve()
+
+
+def is_remote_lake_uri(data_lake_uri: str) -> bool:
+    """Return whether a lake URI is an S3-compatible object-store location."""
+    parsed = urlparse((data_lake_uri or "").strip())
+    return parsed.scheme.lower() == "s3" and bool(parsed.netloc)
+
+
+def remote_bronze_dataset_glob(
+    contract: LakeProductContract,
+    dataset: str,
+    *,
+    data_lake_uri: Optional[str] = None,
+) -> str:
+    """Build a bounded DuckDB glob for Bronze parts in an S3-compatible lake.
+
+    The ingest contract writes one partition below ``ingest_date`` and
+    ``source``. Restricting the glob to those known partition levels avoids
+    scanning landing, manifests, or another dataset.
+    """
+    uri = data_lake_uri or default_data_lake_uri(
+        data_lake_uri=contract.data_lake_uri,
+        project_root=contract.project_root,
+        solo_empire_root=contract.solo_empire_root,
+    ).strip()
+    if not is_remote_lake_uri(uri):
+        raise LakeUnavailable("remote_bronze_dataset_glob requires an s3:// lake URI")
+    return (
+        f"{uri.rstrip('/')}/bronze/domain={contract.domain}/dataset={dataset}/"
+        f"schema_version={contract.bronze_schema_version}/ingest_date=*/"
+        "source=*/part-*.parquet"
+    )
 
 
 def bronze_dataset_dir(
@@ -334,9 +366,21 @@ def read_bronze_rows(
     data_lake_uri: Optional[str] = None,
     sql: str | None = None,
 ) -> list[dict[str, Any]]:
-    files = list_bronze_parquet_files(contract, dataset, data_lake_uri=data_lake_uri)
-    if not files:
-        return []
+    uri = data_lake_uri or default_data_lake_uri(
+        data_lake_uri=contract.data_lake_uri,
+        project_root=contract.project_root,
+        solo_empire_root=contract.solo_empire_root,
+    )
+    remote = is_remote_lake_uri(uri)
+    if remote:
+        paths: str | list[str] = remote_bronze_dataset_glob(
+            contract, dataset, data_lake_uri=uri
+        )
+    else:
+        files = list_bronze_parquet_files(contract, dataset, data_lake_uri=uri)
+        if not files:
+            return []
+        paths = [str(path) for path in files]
 
     query_parquet, DuckDBUnavailable, _solo = load_query_runtime(
         contract.project_root,
@@ -350,7 +394,7 @@ def read_bronze_rows(
         "ORDER BY event_time NULLS LAST, received_at NULLS LAST, event_id"
     )
     try:
-        return query_parquet([str(path) for path in files], statement)
+        return query_parquet(paths, statement)
     except DuckDBUnavailable as exc:
         raise LakeUnavailable(str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
