@@ -22,8 +22,8 @@ sys.path.insert(0, str(ROOT / "infra" / "scripts" / "utils"))
 from job_client import fetch_jobs  # noqa: E402
 
 
-BACKLOG_CSV = ROOT / "docs" / "opportunities" / "data" / "opportunity-backlog.csv"
-BACKLOG_MD = ROOT / "docs" / "opportunities" / "OPPORTUNITY-BACKLOG.md"
+BACKLOG_CSV = ROOT / "opportunities" / "data" / "opportunity-backlog.csv"
+BACKLOG_MD = ROOT / "opportunities" / "OPPORTUNITY-BACKLOG.md"
 FIELDS = [
     "id",
     "lane",
