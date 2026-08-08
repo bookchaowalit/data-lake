@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Import job-scraper output into Solo Empire's raw opportunity backlog.
+"""Import ``job.v1`` records into Solo Empire's raw opportunity backlog.
 
-The scraper remains the discovery system of record. This adapter only reads
-its CSV output and, with an explicit ``--apply``, appends new UNTRIAGED rows to
-the backlog. It never prepares, sends, or submits an application.
+The job scraper remains collection-only. book-job-data owns the file capture →
+Bronze boundary; this adapter consumes its API and, with an explicit
+``--apply``, appends new UNTRIAGED rows to the backlog. It never prepares,
+sends, or submits an application and never reads the opportunity contract.
 """
 
 from __future__ import annotations
@@ -16,20 +17,11 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
-
 ROOT = Path(__file__).resolve().parents[3]
-SCRAPER_ROOT = (
-    ROOT
-    / "projects"
-    / "product"
-    / "engineering"
-    / "book-dev"
-    / "github"
-    / "bookchaowalit"
-    / "book-apps"
-    / "tools"
-    / "book-job-scraping"
-)
+sys.path.insert(0, str(ROOT / "infra" / "scripts" / "utils"))
+from job_client import fetch_jobs  # noqa: E402
+
+
 BACKLOG_CSV = ROOT / "docs" / "opportunities" / "data" / "opportunity-backlog.csv"
 BACKLOG_MD = ROOT / "docs" / "opportunities" / "OPPORTUNITY-BACKLOG.md"
 FIELDS = [
@@ -89,33 +81,11 @@ def classify(row: dict[str, str], source: str) -> tuple[str, str]:
     return "engineering-general", "Full-stack/software"
 
 
-def input_path(raw: str | None) -> Path | None:
-    if raw:
-        candidate = Path(raw)
-        if not candidate.is_absolute():
-            candidate = ROOT / candidate
-        return candidate
-    for candidate in (
-        SCRAPER_ROOT / "data" / "matched_jobs.csv",
-        SCRAPER_ROOT / "data" / "job_postings.csv",
-        SCRAPER_ROOT / "data" / "pipeline.csv",
-    ):
-        if candidate.exists():
-            return candidate
-    return None
-
-
-def source_kind(path: Path) -> str:
-    if path.name == "pipeline.csv":
-        return "pipeline"
-    if path.name == "matched_jobs.csv":
-        return "matched"
-    return "job_postings"
-
-
-def read_rows(path: Path, limit: int) -> list[dict[str, str]]:
-    with path.open(newline="", encoding="utf-8-sig") as handle:
-        return list(csv.DictReader(handle))[:limit]
+def read_rows(limit: int) -> list[dict[str, str]]:
+    result = fetch_jobs(dataset="job_postings", limit=limit)
+    if result.data_status in {"error", "unavailable", "malformed"}:
+        raise RuntimeError(result.error_message or "job.v1 unavailable")
+    return [dict(row) for row in result.items[:limit]]
 
 
 def normalize_row(row: dict[str, str], source: str, item_id: str, verified: str) -> dict[str, str] | None:
@@ -179,28 +149,24 @@ def apply_rows(rows: list[dict[str, str]]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", help="Scraper CSV; defaults to matched_jobs.csv, job_postings.csv, or pipeline.csv")
     parser.add_argument("--max-rows", type=int, default=200, help="Maximum rows to inspect (default: 200)")
     parser.add_argument("--apply", action="store_true", help="Append new rows to the CSV and Markdown backlog")
     args = parser.parse_args()
-
-    path = input_path(args.input)
-    if path is None:
-        print(f"No scraper output found under {SCRAPER_ROOT / 'data'}. Run the scraper first.")
-        return 0
-    if not path.exists():
-        print(f"Input does not exist: {path}", file=sys.stderr)
-        return 2
 
     with BACKLOG_CSV.open(newline="", encoding="utf-8") as handle:
         existing = list(csv.DictReader(handle))
     existing_urls = {canonical_url(row.get("source_url", "")) for row in existing}
     existing_ids = {row.get("id", "") for row in existing}
     today = date.today().isoformat()
-    source = source_kind(path)
+    source = "job_api"
     new_rows: list[dict[str, str]] = []
     sequence = 1
-    for raw in read_rows(path, max(0, args.max_rows)):
+    try:
+        source_rows = read_rows(max(0, args.max_rows))
+    except RuntimeError as exc:
+        print(f"job.v1 unavailable: {exc}", file=sys.stderr)
+        return 2
+    for raw in source_rows:
         normalized_url = canonical_url(value(raw, "url", "source_url", "apply_url", "link"))
         if not normalized_url or normalized_url in existing_urls:
             continue
@@ -215,7 +181,7 @@ def main() -> int:
         existing_ids.add(item_id)
         new_rows.append(row)
 
-    print(f"Source: {path}")
+    print("Source: book-job-data :8109 (job.v1)")
     print(f"New backlog rows: {len(new_rows)}")
     for row in new_rows[:20]:
         print(f"- {row['id']}: {row['title']} [{row['source_url']}]")
