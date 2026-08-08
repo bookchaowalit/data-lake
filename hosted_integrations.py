@@ -149,7 +149,7 @@ INTEGRATIONS = (
         "sentry",
         "application_error_tracking",
         (("SENTRY_DSN",),),
-        "Optional application error tracking; SENTRY_AUTH_TOKEN is only for source maps",
+        "Optional application error tracking; the server may use SENTRY_AUTH_TOKEN for read-only issue summaries or source maps",
     ),
     IntegrationSpec(
         "infisical",
