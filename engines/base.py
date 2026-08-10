@@ -262,7 +262,13 @@ def read_bronze_dicts(parquet_paths: Sequence[Path | str]) -> list[dict[str, Any
     paths = [Path(p) for p in parquet_paths]
     if not paths:
         return []
-    tables = [pq.read_table(path) for path in paths]
+    # Bronze paths can live below Hive-style directories such as
+    # ``domain=...``.  PyArrow's default dataset partition inference then
+    # collides with an explicit ``domain`` column in the file (and can also
+    # surface dictionary-vs-string schema differences).  The Bronze envelope
+    # already carries these fields, so disable path partition inference and
+    # let the file schema remain authoritative.
+    tables = [pq.read_table(path, partitioning=None) for path in paths]
     table = tables[0]
     for extra in tables[1:]:
         table = pa.concat_tables([table, extra], promote_options="default")
