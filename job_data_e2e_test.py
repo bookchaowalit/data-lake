@@ -88,6 +88,16 @@ class JobDataE2ETests(unittest.TestCase):
                     "API_PORT": str(port),
                     "LAKE_READ_MODE": "parquet",
                     "LAKE_READ_FALLBACK": "error",
+                    # This is an offline structural contract test, not a live
+                    # freshness monitor: fixtures/job_postings.csv carries a
+                    # fixed scraped_at timestamp that ages past the API's
+                    # default STALE_AFTER_HOURS (48h) a few days after any
+                    # commit, flipping data_status to "stale" and failing this
+                    # test for a reason unrelated to what it actually checks
+                    # (ingest -> bronze -> API -> consumer wiring). Pin a
+                    # effectively-unbounded window so only real wiring
+                    # regressions fail here.
+                    "STALE_AFTER_HOURS": "876000",  # 100 years
                 }
             )
             process = subprocess.Popen(
