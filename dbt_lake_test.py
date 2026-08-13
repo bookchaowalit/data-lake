@@ -111,6 +111,11 @@ def run() -> bool:
         bronze_root = Path(tmp) / "bronze"
         build_synthetic_bronze(bronze_root)
         target_dir = Path(tmp) / "target"
+        # dbt-duckdb does not create the target directory itself before
+        # opening the database file there — confirmed by a real CI failure
+        # ("Cannot open file .../target/local.duckdb: No such file or
+        # directory") on the first run of this test.
+        target_dir.mkdir(parents=True, exist_ok=True)
 
         result = subprocess.run(
             [
