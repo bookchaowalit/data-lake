@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_emails
+    description: >
+      One row per deduplicated Bronze event_id from
+      domain=communications/dataset=emails. privacy_class=private; this
+      model is for local/offline use only, never published.
+    columns:
+      - name: event_id
+        description: Bronze envelope event identifier (stable per ingest run).
+        tests:
+          - unique
+          - not_null
+      - name: received_at
+        tests:
+          - not_null
+      - name: privacy_class
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["private", "internal", "public"]
+      - name: message_id
+        tests:
+          - not_null

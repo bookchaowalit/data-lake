@@ -1,0 +1,15 @@
+version: 2
+
+models:
+  - name: email_activity_daily
+    description: >
+      Daily email activity counts derived from stg_emails. Aggregate-only;
+      contains no message content or sender identity.
+    columns:
+      - name: activity_date
+        tests:
+          - unique
+          - not_null
+      - name: email_count
+        tests:
+          - not_null

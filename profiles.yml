@@ -1,0 +1,11 @@
+# Colocated with the project (not ~/.dbt/profiles.yml) so CI and any
+# checkout can run `dbt run --profiles-dir infra/dbt` without per-machine
+# setup. DuckDB file is local scratch state (gitignored), rebuilt from
+# Bronze Parquet on every run — never itself a source of truth.
+solo_empire_lake:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: target/local.duckdb
+      threads: 4
