@@ -7,5 +7,9 @@ solo_empire_lake:
   outputs:
     dev:
       type: duckdb
-      path: target/local.duckdb
+      # Directly in the project dir (not target/<file>): dbt-duckdb does
+      # not create missing parent directories before opening the database
+      # file, and the project directory itself always exists. Confirmed
+      # by a real CI failure when this pointed at target/local.duckdb.
+      path: local.duckdb
       threads: 4
