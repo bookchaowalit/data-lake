@@ -186,8 +186,10 @@ def _ingest_payload(
 
     store = ObjectStore(data_lake_uri)
     existing_manifest: dict[str, Any] | None = None
+    existing_manifest_bytes: bytes | None = None
     try:
-        existing_manifest = json.loads(store.get_bytes(manifest_key).decode("utf-8"))
+        existing_manifest_bytes = store.get_bytes(manifest_key)
+        existing_manifest = json.loads(existing_manifest_bytes.decode("utf-8"))
     except StorageError:
         # A missing manifest is the normal first-ingest path. Partial runs are
         # safe to resume because the individual object writes are immutable and
@@ -300,36 +302,51 @@ def _ingest_payload(
             warehouse_uri=iceberg_warehouse_uri,
             run_id=run_id,
         )
-    manifest = {
-        "manifest_version": "1",
-        "batch_id": batch_id,
-        "run_id": run_id,
-        "source": source,
-        "domain": domain,
-        "dataset": dataset,
-        "schema_version": schema_version,
-        "received_at": received_at,
-        "record_count": len(records),
-        "raw": {"key": raw_key, "sha256": raw_sha256, "bytes": len(raw)},
-        "bronze": {
-            "key": bronze_key,
-            "sha256": bronze_result.sha256,
-            "bytes": len(parquet_bytes),
-            "columns": list(BRONZE_COLUMNS),
-        },
-        "privacy_class": privacy_class,
-        "retention_class": retention_class,
-        "metadata": metadata,
-    }
-    if iceberg_result:
-        manifest["iceberg"] = {
-            key: value for key, value in iceberg_result.items() if key != "status"
+    if existing_manifest_bytes is not None:
+        # Batch manifests are immutable audit evidence.  A later idempotent
+        # retry may observe a newer Iceberg snapshot after another batch was
+        # appended, so never regenerate this object's snapshot metadata.
+        manifest_result = store.put_bytes(
+            manifest_key,
+            existing_manifest_bytes,
+            content_type="application/json",
+        )
+    else:
+        manifest = {
+            "manifest_version": "1",
+            "batch_id": batch_id,
+            "run_id": run_id,
+            "source": source,
+            "domain": domain,
+            "dataset": dataset,
+            "schema_version": schema_version,
+            "received_at": received_at,
+            "record_count": len(records),
+            "raw": {"key": raw_key, "sha256": raw_sha256, "bytes": len(raw)},
+            "bronze": {
+                "key": bronze_key,
+                "sha256": bronze_result.sha256,
+                "bytes": len(parquet_bytes),
+                "columns": list(BRONZE_COLUMNS),
+            },
+            "privacy_class": privacy_class,
+            "retention_class": retention_class,
+            "metadata": metadata,
         }
-    manifest_result = store.put_bytes(
-        manifest_key,
-        (canonical_json(manifest) + "\n").encode("utf-8"),
-        content_type="application/json",
-    )
+        if iceberg_result:
+            manifest["iceberg"] = {
+                # ``metadata_location`` is a catalog pointer, not immutable
+                # batch lineage. Keep it in the in-process result for exact
+                # reads, but do not persist a mutable catalog pointer.
+                key: value
+                for key, value in iceberg_result.items()
+                if key not in {"status", "metadata_location"}
+            }
+        manifest_result = store.put_bytes(
+            manifest_key,
+            (canonical_json(manifest) + "\n").encode("utf-8"),
+            content_type="application/json",
+        )
     return {
         "status": "success",
         "data_lake": store.describe(),

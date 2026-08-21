@@ -449,7 +449,11 @@ def read_iceberg_rows(
             domain=contract.domain,
             dataset=dataset,
         )
-        return query_iceberg(resolved["table_location"], statement)
+        return query_iceberg(
+            resolved["table_location"],
+            statement,
+            metadata_location=resolved.get("metadata_location"),
+        )
     except (IcebergUnavailable, DuckDBUnavailable, StorageError) as exc:
         raise LakeUnavailable(str(exc)) from exc
     except Exception as exc:  # noqa: BLE001

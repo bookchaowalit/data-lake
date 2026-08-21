@@ -108,6 +108,7 @@ def run_catalog_e2e(
         str(first["table_location"]),
         "SELECT count(*) AS record_count, count(raw_object_key) AS lineage_count "
         "FROM lake_table",
+        metadata_location=str(first["metadata_location"]),
     )
     _assert(len(query_rows) == 1, "Iceberg query returned no aggregate row")
     queried_count = int(query_rows[0]["record_count"])
