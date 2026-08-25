@@ -9,6 +9,7 @@ import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
@@ -69,6 +70,20 @@ class MaintenanceTests(unittest.TestCase):
                 now=datetime(2026, 8, 8, tzinfo=timezone.utc),
             )
             self.assertTrue(any(item["manifest_key"] == old_key for item in report["retention"]["candidates"]))
+
+    def test_report_surfaces_permission_errors_without_false_orphans(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self._ingest(root)
+            with patch.object(ObjectStore, "get_bytes", side_effect=PermissionError("denied")):
+                report = build_maintenance_report(root)
+            self.assertEqual(report["status"], "attention")
+            self.assertFalse(report["integrity"]["orphan_check_complete"])
+            self.assertEqual(len(report["integrity"]["permission_errors"]), 1)
+            self.assertEqual(report["integrity"]["orphan_candidates"], [])
+            self.assertEqual(
+                report["integrity"]["permission_errors"][0]["manifest_key"],
+                result["manifest_key"],
+            )
 
     def test_restore_verifies_raw_bytes_and_bronze_rows(self):
         with tempfile.TemporaryDirectory() as root, tempfile.TemporaryDirectory() as evidence:
