@@ -115,6 +115,7 @@ def build_maintenance_report(
     referenced_keys: set[str] = set()
     missing_references: set[str] = set()
     malformed_manifests: list[dict[str, str]] = []
+    permission_errors: list[dict[str, str]] = []
     retention_candidates: list[dict[str, Any]] = []
     now_utc = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     cutoff = now_utc - timedelta(days=older_than_days)
@@ -122,6 +123,12 @@ def build_maintenance_report(
     for manifest_key in manifest_keys:
         try:
             manifest = json.loads(store.get_bytes(manifest_key).decode("utf-8"))
+        except PermissionError as exc:
+            permission_errors.append({
+                "manifest_key": manifest_key,
+                "error": f"{type(exc).__name__}: {exc}",
+            })
+            continue
         except (UnicodeDecodeError, json.JSONDecodeError, StorageError) as exc:
             malformed_manifests.append({
                 "manifest_key": manifest_key,
@@ -144,7 +151,8 @@ def build_maintenance_report(
             retention_candidates.append(candidate)
 
     data_keys = [key for key in keys if key.startswith(DATA_PREFIXES)]
-    orphan_candidates = [
+    manifest_read_errors = bool(permission_errors or malformed_manifests)
+    orphan_candidates = [] if manifest_read_errors else [
         {"key": key, "bytes": _safe_object_size(store, key)}
         for key in data_keys
         if key not in referenced_keys
@@ -164,7 +172,9 @@ def build_maintenance_report(
 
     findings = len(orphan_candidates) + len(missing_references) + len(
         malformed_manifests
-    ) + len(retention_candidates) + len(small_file_candidates)
+    ) + len(permission_errors) + len(retention_candidates) + len(
+        small_file_candidates
+    )
     return {
         "status": "attention" if findings else "ok",
         "mode": "read_only_dry_run",
@@ -179,6 +189,8 @@ def build_maintenance_report(
             "referenced_object_count": len(referenced_keys),
             "missing_references": sorted(missing_references),
             "malformed_manifests": malformed_manifests,
+            "permission_errors": permission_errors,
+            "orphan_check_complete": not manifest_read_errors,
             "orphan_candidates": orphan_candidates,
         },
         "retention": {
