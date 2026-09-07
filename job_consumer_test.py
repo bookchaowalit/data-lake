@@ -30,7 +30,7 @@ class JobClientTests(unittest.TestCase):
         self.assertEqual(result.items[0]["title"], "Data Engineer")
 
     def test_malformed_envelope_is_not_consumed(self):
-        result = job_client.fetch_jobs(fetch_impl=lambda _url: {"schema_version": "opportunity.v1"}, use_lake_fallback=False)
+        result = job_client.fetch_jobs(fetch_impl=lambda _url: {"schema_version": "unknown.v1"}, use_lake_fallback=False)
         self.assertEqual(result.source, "none")
         self.assertEqual(result.data_status, "unavailable")
 
