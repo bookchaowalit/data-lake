@@ -23,7 +23,7 @@ from job_client import fetch_jobs  # noqa: E402
 
 
 BACKLOG_CSV = ROOT / "opportunities" / "data" / "opportunity-backlog.csv"
-BACKLOG_MD = ROOT / "opportunities" / "OPPORTUNITY-BACKLOG.md"
+BACKLOG_MD = ROOT / "opportunities" / "inventory" / "OPPORTUNITY-BACKLOG.md"
 FIELDS = [
     "id",
     "lane",
@@ -36,6 +36,19 @@ FIELDS = [
     "source_url",
     "last_verified",
 ]
+ALLOWED_QUALIFICATION_STATUSES = {"PASS", "VERIFY"}
+DEFAULT_IMPORT_STATUSES = "PASS"
+REQUIRED_QUALIFICATION_FIELDS = {
+    "qualification_status",
+    "policy_version",
+    "employment_type",
+    "work_arrangement",
+    "thailand_eligibility",
+    "concurrent_employment",
+    "engagement_boundary",
+    "application_readiness",
+    "qualification_reasons",
+}
 
 
 def value(row: dict[str, str], *names: str) -> str:
@@ -58,6 +71,9 @@ def canonical_url(url: str) -> str:
 
 
 def classify(row: dict[str, str], source: str) -> tuple[str, str]:
+    career_lane = value(row, "search_lane")
+    if career_lane in {"remote_career", "relocation"}:
+        return career_lane.replace("_", "-"), "International career"
     text = " ".join(
         (
             value(row, "title", "company", "name"),
@@ -81,11 +97,32 @@ def classify(row: dict[str, str], source: str) -> tuple[str, str]:
     return "engineering-general", "Full-stack/software"
 
 
-def read_rows(limit: int) -> list[dict[str, str]]:
-    result = fetch_jobs(dataset="job_postings", limit=limit)
-    if result.data_status in {"error", "unavailable", "malformed"}:
-        raise RuntimeError(result.error_message or "job.v1 unavailable")
-    return [dict(row) for row in result.items[:limit]]
+def read_rows(limit: int) -> tuple[list[dict[str, str]], str]:
+    """Read the policy-qualified dataset and reject stale producer schemas."""
+    result = fetch_jobs(dataset="job_matches", limit=max(1, limit))
+    if result.data_status not in {"ok", "stale"} or not result.items:
+        detail = result.error_message or f"job_matches data_status={result.data_status}"
+        raise RuntimeError(detail)
+    rows = [dict(row) for row in result.items[:limit]]
+    invalid = [
+        index
+        for index, row in enumerate(rows, 1)
+        if any(not str(row.get(field) or "").strip() for field in REQUIRED_QUALIFICATION_FIELDS)
+        or str(row.get("qualification_status") or "").strip().upper()
+        not in ALLOWED_QUALIFICATION_STATUSES
+    ]
+    if invalid:
+        sample = ",".join(str(index) for index in invalid[:5])
+        raise RuntimeError(f"job_matches missing/invalid qualification evidence at row(s): {sample}")
+    return rows, result.source
+
+
+def select_qualified_rows(rows: list[dict[str, str]], statuses: set[str]) -> list[dict[str, str]]:
+    return [
+        row
+        for row in rows
+        if str(row.get("qualification_status") or "").strip().upper() in statuses
+    ]
 
 
 def normalize_row(row: dict[str, str], source: str, item_id: str, verified: str) -> dict[str, str] | None:
@@ -96,10 +133,9 @@ def normalize_row(row: dict[str, str], source: str, item_id: str, verified: str)
     lane, category = classify(row, source)
     location = value(row, "location", "locations", "job_location") or "Location to verify"
     compensation = value(row, "salary", "compensation", "rate", "budget", "value") or "Rate to verify"
-    if source == "pipeline":
-        engagement = "Freelance marketplace listing"
-    else:
-        engagement = "Remote job listing"
+    employment_type = value(row, "employment_type") or "Unknown engagement"
+    qualification_status = value(row, "qualification_status").upper()
+    engagement = f"{employment_type} opportunity ({qualification_status})"
     return {
         "id": item_id,
         "lane": lane,
@@ -150,19 +186,29 @@ def apply_rows(rows: list[dict[str, str]]) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--max-rows", type=int, default=200, help="Maximum rows to inspect (default: 200)")
+    parser.add_argument(
+        "--statuses",
+        default=DEFAULT_IMPORT_STATUSES,
+        help="Qualified statuses to import (default: PASS; opt in to VERIFY explicitly; REJECT is never allowed)",
+    )
     parser.add_argument("--apply", action="store_true", help="Append new rows to the CSV and Markdown backlog")
     args = parser.parse_args()
+
+    statuses = {item.strip().upper() for item in args.statuses.split(",") if item.strip()}
+    if not statuses or not statuses.issubset(ALLOWED_QUALIFICATION_STATUSES):
+        parser.error("--statuses must contain only PASS and/or VERIFY")
 
     with BACKLOG_CSV.open(newline="", encoding="utf-8") as handle:
         existing = list(csv.DictReader(handle))
     existing_urls = {canonical_url(row.get("source_url", "")) for row in existing}
     existing_ids = {row.get("id", "") for row in existing}
     today = date.today().isoformat()
-    source = "job_api"
+    source = "job_matches"
     new_rows: list[dict[str, str]] = []
     sequence = 1
     try:
-        source_rows = read_rows(max(0, args.max_rows))
+        loaded_rows, load_source = read_rows(max(0, args.max_rows))
+        source_rows = select_qualified_rows(loaded_rows, statuses)
     except RuntimeError as exc:
         print(f"job.v1 unavailable: {exc}", file=sys.stderr)
         return 2
@@ -181,7 +227,8 @@ def main() -> int:
         existing_ids.add(item_id)
         new_rows.append(row)
 
-    print("Source: book-job-data :8109 (job.v1)")
+    print(f"Source: book-job-data :8109 (job.v1/job_matches via {load_source})")
+    print(f"Qualification statuses: {','.join(sorted(statuses))}")
     print(f"New backlog rows: {len(new_rows)}")
     for row in new_rows[:20]:
         print(f"- {row['id']}: {row['title']} [{row['source_url']}]")
