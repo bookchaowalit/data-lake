@@ -22,6 +22,10 @@ class StorageError(RuntimeError):
     """Raised when an object cannot be read or written safely."""
 
 
+class ObjectNotFound(StorageError):
+    """Raised when an object is absent (as opposed to a provider failure)."""
+
+
 class StorageConflict(StorageError):
     """Raised when an immutable local object key already contains other data."""
 
@@ -180,6 +184,32 @@ class ObjectStore:
             *self._aws_args(),
         ])
         if head.returncode == 0:
+            # Custom metadata is written with every upload.  Older objects may
+            # not have it, so fall back to a byte-for-byte read rather than
+            # treating mere existence as proof that an immutable key matches.
+            try:
+                payload = json.loads(head.stdout.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise StorageError(f"Object metadata returned invalid JSON for {key}") from exc
+            metadata = payload.get("Metadata") if isinstance(payload, dict) else None
+            stored_digest = None
+            if isinstance(metadata, dict):
+                for name, value in metadata.items():
+                    if str(name).lower() == "sha256":
+                        stored_digest = str(value).lower()
+                        break
+            if stored_digest:
+                if stored_digest != digest:
+                    raise StorageConflict(f"Immutable object conflict at {key}")
+                return PutResult(key=key, existed=True, sha256=digest)
+            try:
+                existing_digest = hashlib.sha256(self.get_bytes(key)).hexdigest()
+            except ObjectNotFound:
+                # A provider can report a transiently stale HEAD.  Fail closed
+                # instead of overwriting an object whose state is uncertain.
+                raise StorageError(f"Object disappeared while checking {key}")
+            if existing_digest != digest:
+                raise StorageConflict(f"Immutable object conflict at {key}")
             return PutResult(key=key, existed=True, sha256=digest)
 
         if remote_cloud:
@@ -210,7 +240,7 @@ class ObjectStore:
             try:
                 return (self.root / key).read_bytes()
             except FileNotFoundError as exc:
-                raise StorageError(f"Object not found: {key}") from exc
+                raise ObjectNotFound(f"Object not found: {key}") from exc
 
         assert self.bucket is not None
         full_key = self._full_key(key)
@@ -219,6 +249,9 @@ class ObjectStore:
             *self._aws_args(), "--only-show-errors",
         ])
         if result.returncode != 0:
+            error = result.stderr.decode("utf-8", errors="replace").lower()
+            if any(marker in error for marker in ("nosuchkey", "not found", "404", "nosuchbucket")):
+                raise ObjectNotFound(f"Object not found: {key}")
             raise StorageError(f"Object download failed for {key}")
         return result.stdout
 
