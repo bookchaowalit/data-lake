@@ -13,6 +13,36 @@ if __package__ in {None, ""}:
 from discovery.profile import enrich, load_profile
 
 ROOT=Path(__file__).resolve().parents[3]
+CATEGORY_REGISTRY=ROOT/'systems/architecture/discovery-category-registry-v1.json'
+
+
+def category_coverage(registry, *, domain=None, state=None):
+    """Return category coverage without invoking any source or network."""
+    allowed_states={'observed-live', 'adapter-capable', 'source-registration-required'}
+    if state is not None and state not in allowed_states:
+        raise ValueError('unknown category coverage state')
+    products=[]
+    rows=[]
+    for product in registry['products']:
+        if domain and product['domain'] != domain:
+            continue
+        categories=[category for category in product['categories'] if state is None or category['state']==state]
+        products.append({'product_id':product['product_id'], 'domain':product['domain'], 'categories':categories})
+        rows.extend(categories)
+    counts={value:sum(row['state']==value for row in rows) for value in allowed_states}
+    return {
+        'contract':'discovery.portfolio.coverage.v1',
+        'registry':registry['contract'],
+        'updated':registry['updated'],
+        'products':products,
+        'summary':{
+            'declared_categories':len(rows),
+            'observed_live':counts['observed-live'],
+            'adapter_capable_without_current_record':counts['adapter-capable'],
+            'source_registration_required':counts['source-registration-required'],
+            'registered_adapter_capabilities':counts['observed-live']+counts['adapter-capable'],
+        },
+    }
 
 
 def select_items(payload, now, *, open_only=False, query='', max_age_hours=72, starting_within_days=None, upcoming_within_days=None):
@@ -41,7 +71,7 @@ def select_items(payload, now, *, open_only=False, query='', max_age_hours=72, s
             deadline_soon=days_until_deadline is not None and 0 <= days_until_deadline <= upcoming_within_days
             if not (starts_soon or deadline_soon):continue
         continuous_unknown_deadline = deadline['kind']=='unknown' and availability.get('kind')=='continuous'
-        if open_only and (not fresh or expired or not_started or item['status']!='open' or (deadline['kind']=='unknown' and not continuous_unknown_deadline) or item['record_kind']=='directory'):continue
+        if open_only and (not fresh or expired or not_started or item['status']!='open' or (deadline['kind']=='unknown' and not continuous_unknown_deadline) or item.get('record_kind')=='directory'):continue
         label='scheduled' if not_started else ('expired' if expired else item['status'])
         row={'schema_version':payload['schema_version'], 'product':payload['source'], 'freshness':'fresh' if fresh else 'stale', 'availability':label, 'item':item}
         if starts_at:
@@ -61,8 +91,9 @@ def select_items(payload, now, *, open_only=False, query='', max_age_hours=72, s
 
 def main(argv=None):
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['acquire','list','queue','status'])
+    parser.add_argument('command', choices=['acquire','list','queue','status','coverage'])
     parser.add_argument('--domain')
+    parser.add_argument('--state', choices=['observed-live', 'adapter-capable', 'source-registration-required'])
     parser.add_argument('--query',default='')
     parser.add_argument('--open-only',action='store_true')
     parser.add_argument('--profile', help='Explicit private discovery.profile.v1 JSON; never persisted')
@@ -80,6 +111,15 @@ def main(argv=None):
         args.upcoming_within_days = args.starting_within_days if args.starting_within_days is not None else 30
         args.starting_within_days = None
     manifest=json.loads((ROOT/'systems/architecture/discovery-portfolio-v1.json').read_text())
+    if args.command == 'coverage':
+        registry=json.loads(CATEGORY_REGISTRY.read_text())
+        output=category_coverage(registry, domain=args.domain, state=args.state)
+        if args.query or args.open_only or args.profile or args.deadline_within_days is not None or args.starting_within_days is not None or args.upcoming_within_days is not None:
+            parser.error('coverage does not accept record filters')
+        print(json.dumps(output,indent=2,ensure_ascii=False))
+        return 0
+    if args.state is not None:
+        parser.error('--state requires the coverage command')
     products=[p for p in manifest['products'] if p.get('live_sources_enabled') and (not args.domain or p['domain']==args.domain)]
     if not products:parser.error('no enabled source pilot for this domain')
     result={'contract':'discovery.portfolio.v1','command':args.command,'sources':[],'items':[]}

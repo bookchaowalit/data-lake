@@ -16,7 +16,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlsplit
+from urllib.parse import urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from urllib.robotparser import RobotFileParser
 
@@ -36,15 +36,34 @@ class NoRedirect(HTTPRedirectHandler):
         raise CaptureError('redirect requires source policy review')
 
 
-def public_url(url):
+def public_url(url, *, allow_query=False):
     value = urlsplit(url)
-    if value.scheme != 'https' or not value.hostname or value.username or value.password or value.query or value.fragment or value.port:
+    if value.scheme != 'https' or not value.hostname or value.username or value.password or (value.query and not allow_query) or value.fragment or value.port:
         raise CaptureError('invalid canonical source URL')
     return value
 
 
-def get(url, *, accept, attempts=2):
-    public_url(url)
+def fetch_url(source):
+    """Build a reviewed source URL with an explicit, static query only."""
+    base = source['fetch_url']
+    public_url(base)
+    query = source.get('fetch_query')
+    if query is None:
+        return base
+    if not isinstance(query, dict) or not query:
+        raise CaptureError('invalid source query')
+    for key, value in query.items():
+        if not isinstance(key, str) or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]*', key):
+            raise CaptureError('invalid source query key')
+        if not isinstance(value, (str, int)) or isinstance(value, bool) or not str(value):
+            raise CaptureError('invalid source query value')
+    encoded = urlencode(sorted(query.items()))
+    parts = public_url(base)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, encoded, ''))
+
+
+def get(url, *, accept, attempts=2, allow_query=False):
+    public_url(url, allow_query=allow_query)
     for attempt in range(attempts):
         try:
             request = Request(url, headers={'User-Agent': USER_AGENT, 'Accept': accept})
@@ -66,11 +85,11 @@ def get(url, *, accept, attempts=2):
 
 
 def fetch(source):
-    url = source['fetch_url']
-    public_url(url)
+    url = fetch_url(source)
+    has_query = bool(urlsplit(url).query)
     if source['access'] == 'html':
-        host = urlsplit(url).netloc
-        raw, kind = get('https://' + host + '/robots.txt', accept='text/plain')
+        robots_url = source.get('robots_url') or ('https://' + urlsplit(source['fetch_url']).netloc + '/robots.txt')
+        raw, kind = get(robots_url, accept='text/plain')
         if kind != 'text/plain':
             raise CaptureError('robots response is not plain text')
         robots = RobotFileParser()
@@ -81,7 +100,10 @@ def fetch(source):
         if delay > 10:
             raise CaptureError('crawl delay exceeds this bounded runner')
         time.sleep(delay)
-    raw, kind = get(url, accept=source['content_type'])
+    if has_query:
+        raw, kind = get(url, accept=source['content_type'], allow_query=True)
+    else:
+        raw, kind = get(url, accept=source['content_type'])
     if kind != source['content_type']:
         raise CaptureError('unexpected source content type')
     # Do not archive session tokens embedded in public HTML. Select a supported
@@ -157,12 +179,18 @@ def acquire(source, root, state_dir, normalize, validate, *, fetcher=fetch, now=
         previous = read_state(state_path)
         if previous.get('last_attempt_at'):
             elapsed = (datetime.fromisoformat(now.replace('Z','+00:00')) - datetime.fromisoformat(previous['last_attempt_at'].replace('Z','+00:00'))).total_seconds()
-            if elapsed < source['min_interval_seconds']:
+            # A reviewed source query is part of the capture policy. Allow one
+            # immediate migration capture when a source gains or changes its
+            # explicit static query; subsequent attempts remain rate-limited.
+            query_changed = source.get('fetch_query') is not None and previous.get('fetch_query') != source.get('fetch_query')
+            if elapsed < source['min_interval_seconds'] and not query_changed:
                 if previous.get('status') == 'ok':
                     replay(source, previous, root, normalize, validate)
                     return {'source':source['id'], 'status':'cached', 'checked_at':previous['checked_at'], 'count':previous['count']}
                 raise CaptureError('source retry cooldown active')
         state = {'source':source['id'], 'status':'failed', 'last_attempt_at':now}
+        if source.get('fetch_query') is not None:
+            state['fetch_query'] = source['fetch_query']
         atomic_json(state_path, state)
         try:
             raw = fetcher(source)
