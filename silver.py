@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -163,6 +164,21 @@ def _first_text(payload: dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def _numeric_errors(value: str, field: str, *, positive: bool = False) -> list[str]:
+    """Validate a numeric field without allowing NaN or infinity through."""
+    if not value:
+        return [f"missing {field}"]
+    try:
+        number = float(value)
+    except ValueError:
+        return [f"{field} is not numeric"]
+    if not math.isfinite(number):
+        return [f"{field} must be finite"]
+    if positive and number <= 0:
+        return [f"{field} must be positive"]
+    return []
+
+
 def _canonical_url(value: str) -> str:
     """Normalize a job URL without retaining tracking/query state."""
     value = value.strip()
@@ -277,13 +293,7 @@ def normalize_crypto_row(
         errors.append("missing coin_id")
     if not currency:
         errors.append("missing currency")
-    if not price:
-        errors.append("missing price")
-    else:
-        try:
-            float(price)
-        except ValueError:
-            errors.append("price is not numeric")
+    errors.extend(_numeric_errors(price, "price"))
     output = {
         **_common_silver_fields(row, silver_run_id=silver_run_id, payload=payload),
         "record_id": source_record_id or "hash:" + hashlib.sha256(
@@ -319,13 +329,7 @@ def normalize_stock_row(
         errors.append("missing source_record_id")
     if not symbol:
         errors.append("missing symbol")
-    if not price:
-        errors.append("missing price")
-    else:
-        try:
-            float(price)
-        except ValueError:
-            errors.append("price is not numeric")
+    errors.extend(_numeric_errors(price, "price"))
     if not currency:
         errors.append("missing currency")
     output = {
@@ -366,15 +370,7 @@ def normalize_fx_row(
         errors.append("missing base_currency")
     if not quote_currency:
         errors.append("missing quote_currency")
-    if not rate:
-        errors.append("missing rate")
-    else:
-        try:
-            rate_value = float(rate)
-            if rate_value <= 0:
-                errors.append("rate must be positive")
-        except ValueError:
-            errors.append("rate is not numeric")
+    errors.extend(_numeric_errors(rate, "rate", positive=True))
     output = {
         **_common_silver_fields(row, silver_run_id=silver_run_id, payload=payload),
         "record_id": source_record_id or "hash:" + hashlib.sha256(

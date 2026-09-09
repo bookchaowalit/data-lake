@@ -15,6 +15,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 from datetime import datetime, timedelta, timezone
@@ -31,7 +32,10 @@ from data_lake.storage import ObjectStore, StorageError  # noqa: E402
 
 
 MANIFEST_PREFIX = "control/manifests"
-DATA_PREFIXES = ("landing/", "bronze/", "silver/", "gold/")
+# Include control checkpoints in lineage/orphan inventory. They are immutable
+# control-plane objects, but a checkpoint left by a crashed run still needs a
+# bounded cleanup candidate once its final manifest is absent.
+DATA_PREFIXES = ("landing/", "bronze/", "silver/", "gold/", "control/checkpoints/")
 DEFAULT_SMALL_FILE_BYTES = 8 * 1024 * 1024
 DEFAULT_RETENTION_DAYS = 30
 PROTECTED_RETENTION_CLASSES = {"evidence", "legal-hold"}
@@ -54,7 +58,7 @@ def _manifest_object_keys(value: Any) -> set[str]:
     found: set[str] = set()
     if isinstance(value, dict):
         for key, item in value.items():
-            if key == "key" and isinstance(item, str):
+            if key in {"key", "checkpoint_key"} and isinstance(item, str):
                 candidate = item.strip("/")
                 if "://" not in candidate and candidate.startswith(DATA_PREFIXES):
                     found.add(candidate)
@@ -152,7 +156,16 @@ def build_maintenance_report(
 
     data_keys = [key for key in keys if key.startswith(DATA_PREFIXES)]
     manifest_read_errors = bool(permission_errors or malformed_manifests)
-    orphan_candidates = [] if manifest_read_errors else [
+    # A bounded data prefix normally does not contain the control manifests.
+    # Never call its objects orphaned without the lineage index; report the
+    # incomplete scope and fail closed instead.
+    lineage_scope_complete = not data_keys or not prefix or bool(manifest_keys)
+    lineage_scope_warning = None
+    if not lineage_scope_complete:
+        lineage_scope_warning = (
+            "scan prefix does not include control/manifests; orphan check skipped"
+        )
+    orphan_candidates = [] if manifest_read_errors or not lineage_scope_complete else [
         {"key": key, "bytes": _safe_object_size(store, key)}
         for key in data_keys
         if key not in referenced_keys
@@ -174,7 +187,7 @@ def build_maintenance_report(
         malformed_manifests
     ) + len(permission_errors) + len(retention_candidates) + len(
         small_file_candidates
-    )
+    ) + (1 if not lineage_scope_complete else 0)
     return {
         "status": "attention" if findings else "ok",
         "mode": "read_only_dry_run",
@@ -190,7 +203,11 @@ def build_maintenance_report(
             "missing_references": sorted(missing_references),
             "malformed_manifests": malformed_manifests,
             "permission_errors": permission_errors,
-            "orphan_check_complete": not manifest_read_errors,
+            "lineage_scope_complete": lineage_scope_complete,
+            "lineage_scope_warning": lineage_scope_warning,
+            "orphan_check_complete": (
+                not manifest_read_errors and lineage_scope_complete
+            ),
             "orphan_candidates": orphan_candidates,
         },
         "retention": {
@@ -227,25 +244,49 @@ def restore_manifest(
     output_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Restore one source object and Bronze Parquet part and verify both."""
+    normalized_manifest_key = manifest_key.strip("/")
+    if not (
+        normalized_manifest_key.startswith(MANIFEST_PREFIX + "/")
+        and normalized_manifest_key.endswith(".json")
+    ):
+        raise ValueError("restore manifest key must be under control/manifests/*.json")
     store = ObjectStore(data_lake_uri)
-    manifest = json.loads(store.get_bytes(manifest_key).decode("utf-8"))
+    manifest_bytes = store.get_bytes(normalized_manifest_key)
+    manifest = json.loads(manifest_bytes.decode("utf-8"))
     if not isinstance(manifest, dict):
         raise ValueError("manifest root must be an object")
     source_name, source_ref = _manifest_ref(manifest, "raw", "source_avro", "avro")
     _, bronze_ref = _manifest_ref(manifest, "bronze")
     source_key = str(source_ref["key"])
     bronze_key = str(bronze_ref["key"])
+    source_key = source_key.strip("/")
+    bronze_key = bronze_key.strip("/")
+    if not source_key.startswith("landing/"):
+        raise ValueError("restore source reference must be under landing/")
+    if not bronze_key.startswith("bronze/"):
+        raise ValueError("restore Bronze reference must be under bronze/")
     source_bytes = store.get_bytes(source_key)
     bronze_bytes = store.get_bytes(bronze_key)
 
     def verify_bytes(label: str, payload: bytes, reference: dict[str, Any]) -> str:
         digest = hashlib.sha256(payload).hexdigest()
         expected = reference.get("sha256")
-        if expected and digest != expected:
+        if not isinstance(expected, str) or not re.fullmatch(
+            r"[0-9a-fA-F]{64}", expected
+        ):
+            raise ValueError(f"{label} reference is missing a valid sha256")
+        if digest != expected.lower():
             raise ValueError(f"{label} checksum mismatch")
         expected_bytes = reference.get("bytes")
-        if expected_bytes is not None and len(payload) != int(expected_bytes):
-            raise ValueError(f"{label} byte count mismatch")
+        if expected_bytes is not None:
+            if (
+                isinstance(expected_bytes, bool)
+                or not isinstance(expected_bytes, int)
+                or expected_bytes < 0
+            ):
+                raise ValueError(f"{label} reference has an invalid byte count")
+            if len(payload) != expected_bytes:
+                raise ValueError(f"{label} byte count mismatch")
         return digest
 
     source_sha256 = verify_bytes(source_name, source_bytes, source_ref)
@@ -266,14 +307,52 @@ def restore_manifest(
     )
     row_count = int(rows[0]["row_count"]) if rows else 0
     expected_count = manifest.get("record_count")
-    if expected_count is not None and row_count != int(expected_count):
-        raise ValueError(
-            f"restored Bronze row count mismatch ({row_count} != {expected_count})"
-        )
+    if expected_count is not None:
+        if (
+            isinstance(expected_count, bool)
+            or not isinstance(expected_count, int)
+            or expected_count < 0
+        ):
+            raise ValueError("manifest record_count must be a non-negative integer")
+        if row_count != expected_count:
+            raise ValueError(
+                f"restored Bronze row count mismatch ({row_count} != {expected_count})"
+            )
+    evidence = {
+        "evidence_version": "1",
+        "status": "verified",
+        "mode": "read_only_restore_drill",
+        "manifest_key": normalized_manifest_key,
+        "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
+        "source": {
+            "kind": source_name,
+            "key": source_key,
+            "sha256": source_sha256,
+            "bytes": len(source_bytes),
+        },
+        "bronze": {
+            "key": bronze_key,
+            "sha256": bronze_sha256,
+            "bytes": len(bronze_bytes),
+            "record_count": row_count,
+        },
+        "checks": {
+            "source_checksum": True,
+            "bronze_checksum": True,
+            "bronze_query": True,
+            "manifest_replayed": True,
+        },
+        "object_storage_writes": False,
+    }
+    evidence_path = restore_dir / "restore-evidence.json"
+    evidence_path.write_text(
+        json.dumps(evidence, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return {
         "status": "verified",
         "mode": "read_only_restore_drill",
-        "manifest_key": manifest_key,
+        "manifest_key": normalized_manifest_key,
         "source_kind": source_name,
         "source_key": source_key,
         "bronze_key": bronze_key,
@@ -281,8 +360,10 @@ def restore_manifest(
         "bronze_sha256": bronze_sha256,
         "record_count": row_count,
         "restore_dir": str(restore_dir),
-        "raw_bytes_exact": bool(source_ref.get("bytes") in (None, len(source_bytes))),
+        "evidence_path": str(evidence_path),
+        "raw_bytes_exact": True,
         "manifest_replayed": True,
+        "checks": evidence["checks"],
         "object_storage_writes": False,
     }
 

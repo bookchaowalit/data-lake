@@ -162,7 +162,21 @@ class ObjectStore:
                 handle.write(data)
                 handle.flush()
                 os.fsync(handle.fileno())
-            temporary.replace(destination)
+            try:
+                # ``link`` is an atomic create-if-absent operation on the same
+                # filesystem.  Unlike replace/rename it cannot clobber a part
+                # written concurrently by another worker.
+                os.link(temporary, destination)
+            except FileExistsError:
+                existing = hashlib.sha256(destination.read_bytes()).hexdigest()
+                if existing != digest:
+                    raise StorageConflict(f"Immutable object conflict at {key}")
+                return PutResult(key=key, existed=True, sha256=digest)
+            finally:
+                try:
+                    temporary.unlink()
+                except FileNotFoundError:
+                    pass
             return PutResult(key=key, existed=False, sha256=digest)
 
         assert self.bucket is not None
@@ -211,6 +225,11 @@ class ObjectStore:
             if existing_digest != digest:
                 raise StorageConflict(f"Immutable object conflict at {key}")
             return PutResult(key=key, existed=True, sha256=digest)
+        head_error = head.stderr.decode("utf-8", errors="replace").lower()
+        if not any(marker in head_error for marker in ("nosuchkey", "not found", "404")):
+            # A permission, endpoint, or transient provider failure must not be
+            # mistaken for absence and followed by an unsafe overwrite.
+            raise StorageError(f"Object metadata lookup failed for {key}")
 
         if remote_cloud:
             max_bytes = _cloud_max_object_bytes()
@@ -220,13 +239,33 @@ class ObjectStore:
                     f"({len(data)} > {max_bytes})"
                 )
 
-        target = f"s3://{self.bucket}/{full_key}"
-        command = ["s3", "cp", "-", target, *self._aws_args(), "--only-show-errors"]
+        # Use the S3 conditional create primitive so two workers racing on a
+        # new immutable key cannot overwrite one another.  A temporary file is
+        # used because ``put-object --body`` accepts a path consistently across
+        # AWS CLI and S3-compatible endpoints.
+        with tempfile.NamedTemporaryFile(prefix="solo-empire-upload-", delete=False) as handle:
+            temporary = Path(handle.name)
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        command = [
+            "s3api", "put-object", "--bucket", self.bucket, "--key", full_key,
+            "--body", str(temporary), "--if-none-match", "*", *self._aws_args(),
+        ]
         if content_type:
             command.extend(["--content-type", content_type])
         command.extend(["--metadata", f"sha256={digest}"])
-        uploaded = self._run_aws(command, input_bytes=data)
+        try:
+            uploaded = self._run_aws(command)
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
         if uploaded.returncode != 0:
+            error = uploaded.stderr.decode("utf-8", errors="replace").lower()
+            if any(marker in error for marker in ("precondition", "if-none-match", "412", "conditional")):
+                raise StorageConflict(f"Immutable object conflict at {key}")
             raise StorageError(
                 f"Object upload failed for {key}; AWS CLI exit={uploaded.returncode}"
             )
@@ -257,7 +296,11 @@ class ObjectStore:
 
     def list_keys(self, prefix: str = "") -> list[str]:
         """List object keys below a prefix for bounded polling jobs."""
-        prefix = "/".join(part for part in prefix.strip("/").split("/") if part)
+        # Keep the local filesystem path bounded to ``self.root`` just like
+        # the S3 path is bounded by ``_full_key``.  A maintenance or polling
+        # caller may pass a user/configured prefix, so do not let ``..`` turn
+        # a read-only listing into a traversal outside the lake root.
+        prefix = _safe_key(prefix) if prefix.strip("/") else ""
         if self.scheme == "file":
             assert self.root is not None
             base = self.root / prefix

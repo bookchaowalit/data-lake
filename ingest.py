@@ -34,11 +34,11 @@ if __package__ in {None, ""}:
         ParquetUnavailable,
         write_bronze_parquet,
     )
-    from data_lake.storage import ObjectStore, StorageError  # type: ignore
+    from data_lake.storage import ObjectNotFound, ObjectStore, StorageError  # type: ignore
     from data_lake.iceberg import IcebergUnavailable  # type: ignore
 else:
     from .parquet import BRONZE_COLUMNS, ParquetUnavailable, write_bronze_parquet
-    from .storage import ObjectStore, StorageError
+    from .storage import ObjectNotFound, ObjectStore, StorageError
     from .iceberg import IcebergUnavailable
 
 
@@ -187,14 +187,46 @@ def _ingest_payload(
     store = ObjectStore(data_lake_uri)
     existing_manifest: dict[str, Any] | None = None
     existing_manifest_bytes: bytes | None = None
+    checkpoint_key = f"control/checkpoints/source={source}/batch_id={batch_id}.json"
+    checkpoint: dict[str, Any] | None = None
     try:
         existing_manifest_bytes = store.get_bytes(manifest_key)
         existing_manifest = json.loads(existing_manifest_bytes.decode("utf-8"))
-    except StorageError:
+    except ObjectNotFound:
         # A missing manifest is the normal first-ingest path. Partial runs are
-        # safe to resume because the individual object writes are immutable and
-        # idempotent.
+        # resumed from the immutable checkpoint written before the data parts.
         existing_manifest = None
+
+    if existing_manifest is None:
+        try:
+            checkpoint_bytes = store.get_bytes(checkpoint_key)
+        except ObjectNotFound:
+            checkpoint = None
+        else:
+            try:
+                checkpoint = json.loads(checkpoint_bytes.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise StorageError(f"Batch {batch_id} has an invalid ingest checkpoint") from exc
+            if not isinstance(checkpoint, dict):
+                raise StorageError(f"Batch {batch_id} has an invalid ingest checkpoint shape")
+            expected_checkpoint = {
+                "source": source,
+                "domain": domain,
+                "dataset": dataset,
+                "schema_version": schema_version,
+                "raw_sha256": raw_sha256,
+                "privacy_class": privacy_class,
+                "retention_class": retention_class,
+                "metadata": metadata,
+            }
+            for field, value in expected_checkpoint.items():
+                if checkpoint.get(field) != value:
+                    raise StorageError(
+                        f"Batch {batch_id} checkpoint does not match {field}"
+                    )
+            for field in ("received_at", "run_id", "raw_key", "bronze_key"):
+                if not isinstance(checkpoint.get(field), str) or not checkpoint[field]:
+                    raise StorageError(f"Batch {batch_id} checkpoint is missing {field}")
 
     if existing_manifest is not None:
         expected = {
@@ -226,23 +258,29 @@ def _ingest_payload(
         raw_key = str(stored_raw["key"])
         bronze_key = str(existing_manifest["bronze"]["key"])
     else:
-        received_at = utc_now()
-        received_date = received_at[:10]
-        run_id = f"{received_date}-{batch_id}"
-        # Optional multi-provider partition keeps raw bytes separated before merge.
-        provider_part = ""
-        if isinstance(metadata, dict) and metadata.get("provider"):
-            try:
-                provider_part = f"/provider={slug(str(metadata['provider']))}"
-            except ValueError:
-                provider_part = ""
-        raw_key = (
-            f"landing/source={source}{provider_part}/batch_id={batch_id}/payload.{extension}"
-        )
-        bronze_key = (
-            f"bronze/domain={domain}/dataset={dataset}/schema_version={schema_version}/"
-            f"ingest_date={received_date}/source={source}/part-{batch_id}.parquet"
-        )
+        if checkpoint is not None:
+            received_at = str(checkpoint["received_at"])
+            run_id = str(checkpoint["run_id"])
+            raw_key = str(checkpoint["raw_key"])
+            bronze_key = str(checkpoint["bronze_key"])
+        else:
+            received_at = utc_now()
+            received_date = received_at[:10]
+            run_id = f"{received_date}-{batch_id}"
+            # Optional multi-provider partition keeps raw bytes separated before merge.
+            provider_part = ""
+            if isinstance(metadata, dict) and metadata.get("provider"):
+                try:
+                    provider_part = f"/provider={slug(str(metadata['provider']))}"
+                except ValueError:
+                    provider_part = ""
+            raw_key = (
+                f"landing/source={source}{provider_part}/batch_id={batch_id}/payload.{extension}"
+            )
+            bronze_key = (
+                f"bronze/domain={domain}/dataset={dataset}/schema_version={schema_version}/"
+                f"ingest_date={received_date}/source={source}/part-{batch_id}.parquet"
+            )
 
     content_type = content_type_override or {
         "json": "application/json",
@@ -253,6 +291,11 @@ def _ingest_payload(
         "bin": "application/octet-stream",
         "binary": "application/octet-stream",
     }.get(extension, "application/octet-stream")
+    if checkpoint is not None:
+        if checkpoint.get("input_format") != extension:
+            raise StorageError(f"Batch {batch_id} checkpoint does not match input format")
+        if checkpoint.get("content_type") != content_type:
+            raise StorageError(f"Batch {batch_id} checkpoint does not match content type")
     # ``html`` stores exact browser/source bytes in landing while still writing
     # structured Bronze rows (payload_json) for DuckDB API consumers.
     raw_input = extension in {"bin", "binary"}
@@ -286,6 +329,34 @@ def _ingest_payload(
         parquet_path = Path(temp_dir) / "part.parquet"
         write_bronze_parquet(records, parquet_path)
         parquet_bytes = parquet_path.read_bytes()
+
+    checkpoint_result = None
+    if existing_manifest is None and checkpoint is None:
+        checkpoint_payload = {
+            "checkpoint_version": "1",
+            "source": source,
+            "domain": domain,
+            "dataset": dataset,
+            "schema_version": schema_version,
+            "raw_sha256": raw_sha256,
+            "privacy_class": privacy_class,
+            "retention_class": retention_class,
+            "metadata": metadata,
+            "input_format": extension,
+            "content_type": content_type,
+            "received_at": received_at,
+            "run_id": run_id,
+            "raw_key": raw_key,
+            "bronze_key": bronze_key,
+        }
+        # The checkpoint fixes all values that affect the Parquet bytes.  A
+        # later retry can therefore resume after a raw/Bronze/manifest outage
+        # without producing a conflicting part under the same immutable key.
+        checkpoint_result = store.put_bytes(
+            checkpoint_key,
+            (canonical_json(checkpoint_payload) + "\n").encode("utf-8"),
+            content_type="application/json",
+        )
 
     raw_result = store.put_bytes(raw_key, raw, content_type=content_type)
     bronze_result = store.put_bytes(bronze_key, parquet_bytes, content_type="application/vnd.apache.parquet")
@@ -342,6 +413,7 @@ def _ingest_payload(
                 for key, value in iceberg_result.items()
                 if key not in {"status", "metadata_location"}
             }
+        manifest["checkpoint_key"] = checkpoint_key
         manifest_result = store.put_bytes(
             manifest_key,
             (canonical_json(manifest) + "\n").encode("utf-8"),
@@ -358,6 +430,10 @@ def _ingest_payload(
         "raw_existed": raw_result.existed,
         "bronze_existed": bronze_result.existed,
         "manifest_existed": manifest_result.existed,
+        "checkpoint_key": checkpoint_key,
+        "checkpoint_existed": bool(
+            checkpoint_result.existed if checkpoint_result is not None else checkpoint is not None
+        ),
         "iceberg": iceberg_result,
     }
 

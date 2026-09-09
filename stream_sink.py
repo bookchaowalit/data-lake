@@ -36,13 +36,13 @@ if __package__ in {None, ""}:
     from data_lake.iceberg import IcebergUnavailable  # type: ignore
     from data_lake.ingest import canonical_json, slug, utc_now  # type: ignore
     from data_lake.parquet import BRONZE_COLUMNS, ParquetUnavailable, write_bronze_parquet  # type: ignore
-    from data_lake.storage import ObjectStore, StorageError  # type: ignore
+    from data_lake.storage import ObjectNotFound, ObjectStore, StorageError  # type: ignore
 else:
     from .avro import AVRO_SCHEMA_VERSION, AvroUnavailable, read_avro, write_avro
     from .iceberg import IcebergUnavailable
     from .ingest import canonical_json, slug, utc_now
     from .parquet import BRONZE_COLUMNS, ParquetUnavailable, write_bronze_parquet
-    from .storage import ObjectStore, StorageError
+    from .storage import ObjectNotFound, ObjectStore, StorageError
 
 
 UTILS_DIR = Path(__file__).resolve().parents[1] / "utils"
@@ -247,23 +247,58 @@ def sink_messages(
         f"batch_id={batch_id}.json"
     )
     store = ObjectStore(data_lake_uri)
+    checkpoint_key = f"control/checkpoints/stream/source={source_name}/batch_id={batch_id}.json"
 
     existing_manifest: dict[str, Any] | None = None
     try:
         existing_manifest = json.loads(store.get_bytes(manifest_key).decode("utf-8"))
-    except StorageError:
+    except ObjectNotFound:
         pass
+    existing_checkpoint: dict[str, Any] | None = None
+    if existing_manifest is None:
+        try:
+            existing_checkpoint = json.loads(store.get_bytes(checkpoint_key).decode("utf-8"))
+        except ObjectNotFound:
+            pass
+        except (StorageError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise StorageError(f"Stream batch {batch_id} has an invalid checkpoint") from exc
+        if existing_checkpoint is not None:
+            if not isinstance(existing_checkpoint, dict):
+                raise StorageError(f"Stream batch {batch_id} has an invalid checkpoint shape")
+            for field, expected in {
+                "stream": source_name,
+                "batch_id": batch_id,
+                "domain": domain_name,
+                "dataset": dataset_name,
+                "schema_version": schema_name,
+                "privacy_class": privacy_class,
+                "retention_class": retention_class,
+                "metadata": metadata or {},
+            }.items():
+                if existing_checkpoint.get(field) != expected:
+                    raise StorageError(f"Stream batch {batch_id} checkpoint does not match {field}")
+            for field in ("updated_at", "run_id", "avro_key"):
+                if field == "run_id":
+                    continue
+                if not isinstance(existing_checkpoint.get(field), str) or not existing_checkpoint[field]:
+                    raise StorageError(f"Stream batch {batch_id} checkpoint is missing {field}")
     if existing_manifest is not None:
         for field, expected in {
             "source": source_name,
             "domain": domain_name,
             "dataset": dataset_name,
             "schema_version": schema_name,
+            "privacy_class": privacy_class,
+            "retention_class": retention_class,
+            "metadata": metadata or {},
         }.items():
             if existing_manifest.get(field) != expected:
                 raise StorageError(f"Stream batch {batch_id} already exists with a different {field}")
         received_at = str(existing_manifest["received_at"])
         run_id = str(existing_manifest["run_id"])
+    elif existing_checkpoint is not None:
+        received_at = str(existing_checkpoint["updated_at"])
+        run_id = str(existing_checkpoint.get("run_id") or f"{received_at[:10]}-{batch_id}")
     else:
         received_at = received_at or utc_now()
         run_id = f"{received_at[:10]}-{batch_id}"
@@ -298,13 +333,39 @@ def sink_messages(
         f"landing/stream/source={source_name}/domain={domain_name}/dataset={dataset_name}/"
         f"schema_version={schema_name}/ingest_date={received_date}/part-{batch_id}.avro"
     )
-    checkpoint_key = f"control/checkpoints/stream/source={source_name}/batch_id={batch_id}.json"
+    if existing_checkpoint is not None:
+        avro_key = str(existing_checkpoint["avro_key"])
 
     import io
 
     avro_buffer = io.BytesIO()
     write_avro(rows, avro_buffer)
     avro_bytes = avro_buffer.getvalue()
+    checkpoint_result = None
+    if existing_checkpoint is None:
+        checkpoint = {
+            "checkpoint_version": "1",
+            "stream": source_name,
+            "batch_id": batch_id,
+            "domain": domain_name,
+            "dataset": dataset_name,
+            "schema_version": schema_name,
+            "privacy_class": privacy_class,
+            "retention_class": retention_class,
+            "metadata": metadata or {},
+            "updated_at": received_at,
+            "run_id": run_id,
+            "next_offsets": _next_offsets(normalized_messages),
+            "manifest_key": manifest_key,
+            "avro_key": avro_key,
+        }
+        # Persist the stable batch identity before Avro. A crash before the
+        # final manifest can then resume with identical Avro bytes and keys.
+        checkpoint_result = store.put_bytes(
+            checkpoint_key,
+            (canonical_json(checkpoint) + "\n").encode("utf-8"),
+            content_type="application/json",
+        )
     avro_result = store.put_bytes(
         avro_key,
         avro_bytes,
@@ -325,6 +386,7 @@ def sink_messages(
         "avro": {"key": avro_key, "sha256": avro_result.sha256, "bytes": len(avro_bytes)},
         "positions": _batch_positions(normalized_messages),
         "next_offsets": _next_offsets(normalized_messages),
+        "checkpoint_key": checkpoint_key,
         "privacy_class": privacy_class,
         "retention_class": retention_class,
         "metadata": metadata or {},
@@ -334,19 +396,8 @@ def sink_messages(
         (canonical_json(manifest) + "\n").encode("utf-8"),
         content_type="application/json",
     )
-    checkpoint = {
-        "checkpoint_version": "1",
-        "stream": source_name,
-        "batch_id": batch_id,
-        "updated_at": received_at,
-        "next_offsets": _next_offsets(normalized_messages),
-        "manifest_key": manifest_key,
-        "avro_key": avro_key,
-    }
-    checkpoint_result = store.put_bytes(
-        checkpoint_key,
-        (canonical_json(checkpoint) + "\n").encode("utf-8"),
-        content_type="application/json",
+    checkpoint_existed = (
+        checkpoint_result.existed if checkpoint_result is not None else True
     )
     return {
         "status": "success",
@@ -356,10 +407,10 @@ def sink_messages(
         "record_count": len(rows),
         "avro_key": avro_result.key,
         "manifest_key": manifest_result.key,
-        "checkpoint_key": checkpoint_result.key,
+        "checkpoint_key": checkpoint_key,
         "avro_existed": avro_result.existed,
         "manifest_existed": manifest_result.existed,
-        "checkpoint_existed": checkpoint_result.existed,
+        "checkpoint_existed": checkpoint_existed,
         "next_offsets": _next_offsets(normalized_messages),
         "commit_positions": _batch_positions(normalized_messages),
     }
@@ -496,14 +547,24 @@ def convert_avro_file(
 
     try:
         existing = json.loads(store.get_bytes(manifest_key).decode("utf-8"))
-    except StorageError:
+    except ObjectNotFound:
         existing = None
     if existing is not None:
+        existing_bronze = existing.get("bronze")
+        if not isinstance(existing_bronze, dict) or not existing_bronze.get("key"):
+            raise StorageError("Stream conversion manifest is missing Bronze lineage")
+        try:
+            existing_bytes = store.get_bytes(str(existing_bronze["key"]))
+        except StorageError as exc:
+            raise StorageError("Stream conversion manifest references a missing Bronze object") from exc
+        expected_digest = existing_bronze.get("sha256")
+        if expected_digest and hashlib.sha256(existing_bytes).hexdigest() != expected_digest:
+            raise StorageError("Stream conversion Bronze checksum does not match its manifest")
         return {
             "status": "already_converted",
             "data_lake": store.describe(),
             "avro_key": avro_key,
-            "bronze_key": existing["bronze"]["key"],
+            "bronze_key": existing_bronze["key"],
             "manifest_key": manifest_key,
             "record_count": existing["record_count"],
             "iceberg": existing.get("iceberg"),
