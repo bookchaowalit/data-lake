@@ -46,6 +46,10 @@ class MaintenanceTests(unittest.TestCase):
             report = build_maintenance_report(root, small_file_bytes=10 * 1024 * 1024)
             self.assertEqual(report["mode"], "read_only_dry_run")
             self.assertEqual(report["integrity"]["missing_references"], [])
+            self.assertNotIn(
+                result["checkpoint_key"],
+                [item["key"] for item in report["integrity"]["orphan_candidates"]],
+            )
             self.assertIn(
                 "bronze/orphan/part-000.parquet",
                 [item["key"] for item in report["integrity"]["orphan_candidates"]],
@@ -71,6 +75,15 @@ class MaintenanceTests(unittest.TestCase):
             )
             self.assertTrue(any(item["manifest_key"] == old_key for item in report["retention"]["candidates"]))
 
+    def test_bounded_data_prefix_does_not_claim_false_orphans(self):
+        with tempfile.TemporaryDirectory() as root:
+            self._ingest(root)
+            report = build_maintenance_report(root, prefix="bronze")
+            self.assertEqual(report["status"], "attention")
+            self.assertFalse(report["integrity"]["lineage_scope_complete"])
+            self.assertFalse(report["integrity"]["orphan_check_complete"])
+            self.assertEqual(report["integrity"]["orphan_candidates"], [])
+
     def test_report_surfaces_permission_errors_without_false_orphans(self):
         with tempfile.TemporaryDirectory() as root:
             result = self._ingest(root)
@@ -93,6 +106,23 @@ class MaintenanceTests(unittest.TestCase):
             self.assertTrue(restored["raw_bytes_exact"])
             self.assertEqual(restored["record_count"], 1)
             self.assertTrue((Path(evidence) / "bronze.parquet").exists())
+            evidence_path = Path(restored["evidence_path"])
+            self.assertTrue(evidence_path.exists())
+            evidence_payload = json.loads(evidence_path.read_text(encoding="utf-8"))
+            self.assertEqual(evidence_payload["status"], "verified")
+            self.assertEqual(evidence_payload["bronze"]["record_count"], 1)
+            self.assertTrue(evidence_payload["checks"]["manifest_replayed"])
+
+    def test_restore_rejects_wrong_layer_reference(self):
+        with tempfile.TemporaryDirectory() as root:
+            result = self._ingest(root)
+            store = ObjectStore(root)
+            manifest = json.loads(store.get_bytes(result["manifest_key"]))
+            manifest["raw"]["key"] = result["bronze_key"]
+            bad_key = "control/manifests/source=maintenance-test/bad-layer.json"
+            store.put_bytes(bad_key, (json.dumps(manifest) + "\n").encode())
+            with self.assertRaises(ValueError):
+                restore_manifest(root, bad_key)
 
 
 if __name__ == "__main__":

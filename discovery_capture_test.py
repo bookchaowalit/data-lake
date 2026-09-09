@@ -87,6 +87,63 @@ class CaptureTests(unittest.TestCase):
         with patch.object(runtime,'get',return_value=(b'User-agent: *\nDisallow: /\n','text/plain')):
             with self.assertRaises(runtime.CaptureError):runtime.fetch(self.source)
 
+    def test_source_specific_robots_url_is_honored(self):
+        source = dict(self.source, robots_url='https://policy.example/robots.txt')
+        calls = []
+
+        def get(url, *, accept):
+            calls.append(url)
+            if url == source['robots_url']:
+                return b'User-agent: *\nAllow: /\n', 'text/plain'
+            return self.raw, 'text/html'
+
+        with patch.object(runtime, 'get', side_effect=get), patch.object(runtime.time, 'sleep'):
+            self.assertEqual(runtime.fetch(source), self.raw)
+        self.assertEqual(calls[0], source['robots_url'])
+
+    def test_static_source_query_is_canonical_and_explicit(self):
+        source = dict(self.source, fetch_query={'stages': 'tender', 'limit': '100'})
+        expected = self.source['fetch_url'] + '?limit=100&stages=tender'
+        self.assertEqual(
+            runtime.fetch_url(source),
+            expected,
+        )
+        with self.assertRaises(runtime.CaptureError):
+            runtime.fetch_url(dict(self.source, fetch_query={'cursor': object()}))
+        with self.assertRaises(runtime.CaptureError):
+            runtime.public_url('https://example.org/source?token=synthetic')
+
+    def test_query_policy_migration_allows_one_immediate_capture(self):
+        source = dict(self.source, fetch_query={'stages': 'tender', 'limit': '100'})
+        self.assertEqual(
+            runtime.acquire(
+                source,
+                self.lake,
+                self.control,
+                self.domain.normalize,
+                self.domain.validate,
+                fetcher=lambda _: self.raw,
+                now=self.clock,
+            )['status'],
+            'captured',
+        )
+        state_path = self.control / (source['id'] + '.json')
+        state = json.loads(state_path.read_text())
+        state.pop('fetch_query')
+        state_path.write_text(json.dumps(state))
+        self.assertEqual(
+            runtime.acquire(
+                source,
+                self.lake,
+                self.control,
+                self.domain.normalize,
+                self.domain.validate,
+                fetcher=lambda _: self.raw,
+                now=self.clock,
+            )['status'],
+            'captured',
+        )
+
     def test_cross_product_manifest_refused(self):
         self.capture();state=self.state();state['manifest_key']='control/manifests/source=another/test.json'
         with self.assertRaises(runtime.CaptureError):runtime.replay(self.source,state,self.lake,self.domain.normalize,self.domain.validate)
@@ -101,6 +158,8 @@ class CaptureTests(unittest.TestCase):
         payload=runtime.replay(self.source,self.state(),self.lake,self.domain.normalize,self.domain.validate)
         self.assertEqual(len(select_items(payload,datetime(2026,9,7,tzinfo=timezone.utc),open_only=True)),1)
         self.assertEqual(select_items(payload,datetime(2026,9,12,tzinfo=timezone.utc),open_only=True),[])
+        payload['items'][0].pop('record_kind', None)
+        self.assertEqual(len(select_items(payload,datetime(2026,9,7,tzinfo=timezone.utc),open_only=True)),1)
         payload['items'][0]['record_kind']='directory'
         self.assertEqual(select_items(payload,datetime(2026,9,7,tzinfo=timezone.utc),open_only=True),[])
         payload['items'][0]['record_kind']='program'

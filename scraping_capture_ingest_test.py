@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+"""Contract tests for replaying existing scraper captures into Bronze."""
+
+from __future__ import annotations
+
+import json
+import socket
+import sys
+import tempfile
+import unittest
+from dataclasses import replace
+from pathlib import Path
+from unittest.mock import Mock, patch
+
+ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "infra" / "scripts"))
+
+from data_lake import run_data_product_stack as stack
+from data_lake.ingest_scraping_captures import CAPTURES, _map_records, _records, ingest_capture
+
+
+class ScrapingCaptureIngestTests(unittest.TestCase):
+    def test_all_frozen_products_have_snapshot_and_history_contracts(self) -> None:
+        products = {spec.product for spec in CAPTURES}
+        self.assertEqual(products, {"crypto", "stocks", "fx", "defi", "flights", "seo", "ai_tools", "news"})
+        for product in products:
+            datasets = {spec.dataset for spec in CAPTURES if spec.product == product}
+            self.assertTrue(any(not spec.history for spec in CAPTURES if spec.product == product))
+            self.assertTrue(any(spec.history for spec in CAPTURES if spec.product == product))
+            self.assertEqual(len(datasets), 1 if product == "crypto" else 2)
+
+    def test_csv_rows_get_stable_source_ids_without_changing_payload_fields(self) -> None:
+        raw = b"coin_id,currency,price,updated_at\nbitcoin,usd,1,2026-09-07T00:00:00Z\n"
+        records = _records(raw, ("coin_id", "currency"))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["id"], "bitcoin|usd")
+        self.assertEqual(records[0]["coin_id"], "bitcoin")
+        self.assertEqual(records[0]["updated_at"], "2026-09-07T00:00:00Z")
+
+    def test_paths_use_exported_capture_boundary(self) -> None:
+        for spec in CAPTURES:
+            self.assertIn("/data/exported/", spec.path)
+            self.assertTrue(spec.path.endswith(".csv"))
+
+    def test_malformed_captures_fail_closed(self) -> None:
+        for raw in (
+            b"name,time\na,2026-09-07\n",
+            b"id,time\n,2026-09-07\n",
+            b"id,time\na,invalid\n",
+            b"id,time\na,2026-09-07T12:00:00\n",
+            b"id,time\na,2026-09-07,extra\n",
+            b"id,time\na\n",
+            b"id,id,time\na,b,2026-09-07\n",
+        ):
+            with self.subTest(raw=raw), self.assertRaises(ValueError):
+                _records(raw, ("id",), "time")
+
+    def test_csv_multiline_is_preserved(self) -> None:
+        rows = _records(b'id,description\na,"one\ntwo"\n', ("id",))
+        self.assertEqual(rows[0]["description"], "one\ntwo")
+
+    def test_seo_capture_maps_to_owned_page_provenance_without_a_serp_rank(self) -> None:
+        spec = next(spec for spec in CAPTURES if spec.product == "seo" and not spec.history)
+        raw = (
+            b"captured_at,domain,url,http_status,title,canonical,content_length,data_status,rank,keyword,source\n"
+            b"2026-09-07T00:00:00Z,example.com,https://example.com,200,Example,,123,ok,,,public_page_check\n"
+        )
+        records = _map_records(spec, _records(raw, spec.id_fields, spec.event_time_field))
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0]["id"], "https://example.com")
+        self.assertEqual(records[0]["capture_kind"], "owned_page_provenance")
+        self.assertEqual(records[0]["keyword"], "owned-page|https://example.com")
+        self.assertEqual(records[0]["target_domain"], "example.com")
+        self.assertEqual(records[0]["result_url"], "https://example.com")
+        self.assertEqual(records[0]["rank"], "")
+        self.assertEqual(records[0]["found"], "true")
+
+    def test_news_capture_maps_to_attributed_rss_article(self) -> None:
+        spec = next(spec for spec in CAPTURES if spec.product == "news" and not spec.history)
+        raw = (
+            b"captured_at,article_id,title,url,source,source_url,published_at\n"
+            b"2026-09-07T00:00:00Z,a-1,Headline,https://publisher.example/a,Publisher,https://publisher.example/feed,2026-09-06T00:00:00Z\n"
+        )
+        records = _map_records(spec, _records(raw, spec.id_fields, spec.event_time_field))
+        self.assertEqual(records[0]["id"], "Publisher|a-1")
+        self.assertEqual(records[0]["headline"], "Headline")
+        self.assertEqual(records[0]["canonical_url"], "https://publisher.example/a")
+        self.assertEqual(records[0]["publisher"], "Publisher")
+        self.assertEqual(records[0]["capture_kind"], "rss_article")
+
+    def test_replay_preserves_source_time_raw_bytes_and_identity(self) -> None:
+        import pyarrow.parquet as pq
+        raw = b"coin_id,currency,price,updated_at\nbitcoin,usd,1,2026-09-07T00:00:00Z\n"
+        with tempfile.TemporaryDirectory() as directory:
+            lake = Path(directory)
+            spec = replace(CAPTURES[0], path="capture.csv")
+            with patch("data_lake.ingest_scraping_captures.Path.open", create=True) as opened:
+                import io
+                opened.return_value.__enter__.side_effect = lambda: io.BytesIO(raw)
+                # Patch only the capture read; storage must use its real files.
+                with patch("data_lake.ingest_scraping_captures.ingest_payload") as ingest:
+                    ingest.return_value = {}
+                    ingest_capture(spec, lake_uri=directory)
+                    passed_raw, records = ingest.call_args.args
+            from data_lake.ingest import ingest_payload
+            kwargs = dict(ingest.call_args.kwargs)
+            first = ingest_payload(passed_raw, records, **kwargs)
+            second = ingest_payload(passed_raw, records, **kwargs)
+            self.assertEqual(first["run_id"], second["run_id"])
+            self.assertTrue(second["manifest_existed"])
+            self.assertEqual((lake / first["raw_key"]).read_bytes(), raw)
+            row = pq.ParquetFile(lake / first["bronze_key"]).read().to_pylist()[0]
+            self.assertEqual(str(row["event_time"]), "2026-09-07T00:00:00Z")
+            self.assertEqual(json.loads(row["payload_json"])["price"], "1")
+
+    def test_stack_refuses_an_occupied_port_without_starting_children(self) -> None:
+        with socket.socket() as occupied, tempfile.TemporaryDirectory() as directory:
+            occupied.bind(("127.0.0.1", 0))
+            product = replace(stack.PRODUCTS[0], port=occupied.getsockname()[1])
+            with patch.object(stack.subprocess, "Popen") as popen:
+                with self.assertRaises(OSError):
+                    stack.start_products([product], lake_uri=directory, log_dir=Path(directory))
+                popen.assert_not_called()
+
+    def test_stack_cleans_up_partial_start_and_overrides_inherited_port(self) -> None:
+        child = Mock()
+        child.poll.return_value = None
+        with tempfile.TemporaryDirectory() as directory, patch.object(stack.socket, "socket"), patch.object(stack.subprocess, "Popen", side_effect=[child, OSError()]) as popen:
+            with self.assertRaises(OSError):
+                stack.start_products(stack.PRODUCTS[:2], lake_uri=directory, log_dir=Path(directory))
+            child.send_signal.assert_called_once()
+            self.assertEqual(popen.call_args_list[0].kwargs["env"]["PORT"], "8101")
+
+    def test_stack_blocks_before_children_when_job_readiness_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(
+                stack,
+                "check_job_readiness",
+                return_value={"status": "attention", "alerts": [{"code": "JOB_DATA_FRESHNESS_STALE"}]},
+            ) as readiness, patch.object(stack, "start_products") as start:
+                result = stack.main(
+                    [
+                        "--check",
+                        "--require-job-readiness",
+                        "--lake-uri",
+                        directory,
+                    ]
+                )
+            self.assertEqual(result, 2)
+            readiness.assert_called_once_with(
+                directory,
+                datasets=None,
+                max_age_hours=None,
+            )
+            start.assert_not_called()
+
+    def test_stack_starts_only_after_job_readiness_passes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(
+                stack,
+                "check_job_readiness",
+                return_value={"status": "ok", "alerts": []},
+            ) as readiness, patch.object(stack, "start_products", return_value=[]) as start, patch.object(
+                stack, "check_health", return_value=[]
+            ) as health:
+                result = stack.main(
+                    [
+                        "--check",
+                        "--require-job-readiness",
+                        "--lake-uri",
+                        directory,
+                    ]
+                )
+            self.assertEqual(result, 0)
+            readiness.assert_called_once_with(
+                directory,
+                datasets=None,
+                max_age_hours=None,
+            )
+            start.assert_called_once()
+            health.assert_called_once_with(stack.PRODUCTS)
+
+
+if __name__ == "__main__":
+    unittest.main()

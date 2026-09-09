@@ -23,6 +23,8 @@ from data_lake.product_adapter import (  # noqa: E402
     select_latest_bronze_rows,
     write_lineage,
 )
+from data_lake.parquet import BRONZE_COLUMNS, write_bronze_parquet  # noqa: E402
+from data_lake.storage import ObjectStore  # noqa: E402
 from data_lake.product_store import (  # noqa: E402
     load_bronze_dataset,
     storage_model_for_source_kind,
@@ -121,7 +123,9 @@ class ProductAdapterTests(unittest.TestCase):
             "data_lake.product_adapter.load_query_runtime",
             return_value=(fake_query, RuntimeError, ROOT),
         ):
-            rows = read_bronze_rows(contract, "job_postings", data_lake_uri=lake_uri)
+            rows = read_bronze_rows(
+                contract, "job_postings", data_lake_uri=lake_uri, require_committed=False
+            )
 
         self.assertEqual(len(rows), 1)
         self.assertEqual(
@@ -161,6 +165,75 @@ class ProductAdapterTests(unittest.TestCase):
         self.assertEqual(payload["source_kind"], "bronze_s3_parquet")
         self.assertEqual(storage_model_for_source_kind(payload["source_kind"], product="job"), "lake_first_job_bronze_s3_duckdb")
         self.assertEqual(len(payload["items"]), 1)
+
+    def test_latest_row_compares_timezone_offsets_by_instant(self):
+        rows = [
+            {
+                "source_record_id": "same",
+                "event_time": "2026-09-08T09:00:00+07:00",
+                "received_at": "2026-09-08T02:00:00Z",
+                "event_id": "older-instant",
+                "payload_json": '{"version":"older"}',
+            },
+            {
+                "source_record_id": "same",
+                "event_time": "2026-09-08T03:00:00Z",
+                "received_at": "2026-09-08T03:00:00Z",
+                "event_id": "newer-instant",
+                "payload_json": '{"version":"newer"}',
+            },
+        ]
+        self.assertEqual(select_latest_bronze_rows(rows)[0]["event_id"], "newer-instant")
+
+    def test_bronze_reader_ignores_part_without_final_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lake_uri = str(Path(tmp) / "lake")
+            contract = LakeProductContract(
+                source="book-stock-data",
+                domain="market",
+                product_schema_version="stock.v1",
+                project_root=ROOT,
+            )
+            ingest_to_lake(
+                contract,
+                raw=b'{"symbol":"AAPL","price":1}',
+                records=[{"id": "AAPL", "symbol": "AAPL", "price": 1}],
+                dataset="stock_prices",
+                data_lake_uri=lake_uri,
+            )
+            orphan = {
+                column: None for column in BRONZE_COLUMNS
+            }
+            orphan.update(
+                {
+                    "event_id": "orphan",
+                    "source": "book-stock-data",
+                    "source_record_id": "ORPHAN",
+                    "domain": "market",
+                    "dataset": "stock_prices",
+                    "schema_version": "1",
+                    "received_at": "2026-08-07T00:00:00Z",
+                    "payload_json": '{"id":"ORPHAN","symbol":"ORPHAN","price":2}',
+                    "metadata_json": "{}",
+                    "ingest_run_id": "orphan",
+                    "privacy_class": "public",
+                    "retention_class": "operational",
+                }
+            )
+            with tempfile.TemporaryDirectory() as output:
+                path = Path(output) / "orphan.parquet"
+                write_bronze_parquet([orphan], path)
+                ObjectStore(lake_uri).put_bytes(
+                    "bronze/domain=market/dataset=stock_prices/schema_version=1/"
+                    "ingest_date=2026-08-07/source=book-stock-data/part-orphan.parquet",
+                    path.read_bytes(),
+                )
+            committed = read_bronze_rows(contract, "stock_prices", data_lake_uri=lake_uri)
+            all_parts = read_bronze_rows(
+                contract, "stock_prices", data_lake_uri=lake_uri, require_committed=False
+            )
+            self.assertEqual(len(committed), 1)
+            self.assertEqual(len(all_parts), 2)
 
 
 if __name__ == "__main__":

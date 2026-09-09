@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +22,7 @@ from data_lake.query import query_parquet  # noqa: E402
 from data_lake.silver import (  # noqa: E402
     SilverProductContract,
     SilverQualityError,
+    normalize_fx_row,
     transform_bronze_to_silver,
 )
 from data_lake.silver_parity_evidence import run_evidence  # noqa: E402
@@ -91,6 +93,13 @@ class SilverTests(unittest.TestCase):
             self.assertEqual(rows[0]["company"], "New Co")
             self.assertEqual(rows[0]["canonical_url"], "https://example.com/jobs/1")
             self.assertTrue(all(row["quality_status"] == "valid" for row in rows))
+            lineage_row = query_parquet(
+                str(Path(root) / first["silver_key"]),
+                "SELECT privacy_class, retention_class, raw_sha256 FROM lake_table LIMIT 1",
+            )[0]
+            self.assertEqual(lineage_row["privacy_class"], "internal")
+            self.assertEqual(lineage_row["retention_class"], "operational")
+            self.assertTrue(lineage_row["raw_sha256"])
             manifest = __import__("json").loads(
                 ObjectStore(root).get_bytes(first["manifest_key"])
             )
@@ -114,6 +123,19 @@ class SilverTests(unittest.TestCase):
                 transform_bronze_to_silver(data_lake_uri=root)
             self.assertEqual(ObjectStore(root).list_keys("silver/"), [])
             self.assertEqual(ObjectStore(root).list_keys("control/manifests/silver/"), [])
+
+    def test_fx_quality_rejects_non_finite_rates(self):
+        for value in ("NaN", "Infinity", "-Infinity"):
+            _row, errors = normalize_fx_row(
+                {
+                    "source_record_id": "fx-1",
+                    "payload_json": json.dumps(
+                        {"base": "USD", "quote": "THB", "rate": value}
+                    ),
+                },
+                silver_run_id="fixture",
+            )
+            self.assertIn("rate must be finite", errors)
 
     def test_crypto_contract_reuses_shared_writer_with_domain_schema(self):
         with tempfile.TemporaryDirectory() as root:

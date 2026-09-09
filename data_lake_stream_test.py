@@ -8,12 +8,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake.avro import read_avro  # noqa: E402
-from data_lake.storage import ObjectStore  # noqa: E402
+from data_lake.storage import ObjectStore, StorageError  # noqa: E402
 from data_lake.stream_sink import (  # noqa: E402
     StreamMessage,
     convert_avro_file,
@@ -94,6 +95,39 @@ class StreamLakeContractTests(unittest.TestCase):
             pending = convert_pending(data_lake_uri=temp_dir)
             self.assertEqual(pending["status"], "healthy")
             self.assertEqual(pending["already_converted"], 1)
+
+    def test_stream_sink_resumes_after_avro_write_failure(self):
+        messages = [StreamMessage("events", 0, 20, {"id": "evt-20", "payload": {"value": 1}})]
+        with tempfile.TemporaryDirectory() as temp_dir:
+            original_put = ObjectStore.put_bytes
+
+            def fail_avro(store, key, data, **kwargs):
+                if key.endswith(".avro"):
+                    raise StorageError("synthetic Avro outage")
+                return original_put(store, key, data, **kwargs)
+
+            with patch.object(ObjectStore, "put_bytes", fail_avro):
+                with self.assertRaises(StorageError):
+                    run_once(
+                        FakeConsumer(messages.copy()),
+                        data_lake_uri=temp_dir,
+                        source="sensor",
+                        domain="operations",
+                        dataset="events",
+                        poll_ms=1,
+                        max_records=10,
+                    )
+            retry = run_once(
+                FakeConsumer(messages.copy()),
+                data_lake_uri=temp_dir,
+                source="sensor",
+                domain="operations",
+                dataset="events",
+                poll_ms=1,
+                max_records=10,
+            )
+            self.assertEqual(retry["status"], "success")
+            self.assertTrue(retry["checkpoint_existed"])
 
 
 if __name__ == "__main__":

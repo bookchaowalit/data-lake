@@ -15,7 +15,7 @@ sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake.ingest import canonical_json, ingest_payload, slug  # noqa: E402
 from data_lake.query import _s3_settings, _sql_string_literal, query_parquet  # noqa: E402
-from data_lake.storage import ObjectStore, StorageConflict  # noqa: E402
+from data_lake.storage import ObjectStore, StorageConflict, StorageError  # noqa: E402
 
 
 class DataLakeContractTests(unittest.TestCase):
@@ -60,6 +60,12 @@ class DataLakeContractTests(unittest.TestCase):
             with self.assertRaises(StorageConflict):
                 store.put_bytes(first.key, b'{"ok":false}')
 
+    def test_local_listing_rejects_path_traversal_prefix(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = ObjectStore(temp_dir)
+            with self.assertRaises(StorageError):
+                store.list_keys("../outside")
+
     def test_ingest_payload_preserves_exact_raw_bytes(self):
         try:
             import pyarrow  # noqa: F401
@@ -84,6 +90,56 @@ class DataLakeContractTests(unittest.TestCase):
             stored = ObjectStore(temp_dir).get_bytes(result["raw_key"])
             self.assertEqual(stored, raw)
             self.assertTrue(result["bronze_key"].endswith(".parquet"))
+
+    def test_ingest_resumes_after_manifest_write_failure(self):
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            self.skipTest("pyarrow not installed")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            raw = b'{"id":"resume-1"}'
+            records = [{"id": "resume-1", "event_time": "2026-08-07T00:00:00Z"}]
+            original_put = ObjectStore.put_bytes
+
+            def fail_final_manifest(store, key, data, **kwargs):
+                if key.startswith("control/manifests/source=resume-test/"):
+                    raise StorageError("synthetic manifest outage")
+                return original_put(store, key, data, **kwargs)
+
+            with patch.object(ObjectStore, "put_bytes", fail_final_manifest), patch(
+                "data_lake.ingest.utc_now", return_value="2026-08-07T00:00:00Z"
+            ):
+                with self.assertRaises(StorageError):
+                    ingest_payload(
+                        raw,
+                        records,
+                        source="resume-test",
+                        domain="testing",
+                        dataset="resume",
+                        data_lake_uri=temp_dir,
+                        input_format="json",
+                        event_time_field="event_time",
+                        privacy_class="internal",
+                    )
+
+            with patch("data_lake.ingest.utc_now", return_value="2026-08-08T00:00:00Z"):
+                resumed = ingest_payload(
+                    raw,
+                    records,
+                    source="resume-test",
+                    domain="testing",
+                    dataset="resume",
+                    data_lake_uri=temp_dir,
+                    input_format="json",
+                    event_time_field="event_time",
+                    privacy_class="internal",
+                )
+
+            self.assertEqual(resumed["status"], "success")
+            self.assertEqual(resumed["checkpoint_existed"], True)
+            self.assertTrue(resumed["raw_existed"])
+            self.assertTrue(resumed["bronze_existed"])
 
     def test_html_landing_keeps_structured_bronze_payload(self):
         try:

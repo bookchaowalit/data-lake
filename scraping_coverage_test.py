@@ -153,6 +153,34 @@ class ScrapingCoverageTests(unittest.TestCase):
         self.assertEqual(report["summary"]["end_to_end_ready"], 0)
         self.assertIn("lake", {gap["code"] for gap in report["gaps"]})
 
+    def test_nested_lake_root_is_discovered_by_coverage_glob(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            requirements, source, config, _ = self._fixtures(root)
+            config["products"][0]["lake"]["datasets"][0]["paths"] = [
+                "data/lake*/**/bronze/domain=demo/dataset=demo/part.parquet"
+            ]
+            self._write_yaml(requirements, config)
+            self._touch(
+                root
+                / "data"
+                / "lake-local"
+                / "scraping-captures-v2"
+                / "bronze"
+                / "domain=demo"
+                / "dataset=demo"
+                / "part.parquet"
+            )
+            report = build_report(
+                root,
+                requirements,
+                source,
+                crontab_text="# book-demo-data-feeds\n",
+                now=NOW,
+            )
+        self.assertEqual(report["products"][0]["lake_status"], "fresh")
+        self.assertEqual(report["products"][0]["stage"], "end_to_end")
+
     def test_stale_capture_is_a_separate_end_to_end_gate(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

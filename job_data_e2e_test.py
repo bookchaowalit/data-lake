@@ -33,6 +33,7 @@ sys.path.insert(0, str(ROOT / "infra/scripts/utils"))
 
 from book_job_data import config  # noqa: E402
 from book_job_data.ingest import ingest_capture  # noqa: E402
+from data_lake.job_data_readiness import build_job_readiness_report  # noqa: E402
 from job_client import fetch_jobs  # noqa: E402
 
 
@@ -74,6 +75,13 @@ class JobDataE2ETests(unittest.TestCase):
             self.assertTrue((lake_uri / snapshot["bronze_key"]).is_file())
             self.assertTrue((lake_uri / snapshot["manifest_key"]).is_file())
             self.assertFalse(list(projection_dir.glob("*.csv")))
+            readiness = build_job_readiness_report(
+                str(lake_uri),
+                datasets=("job_postings",),
+                max_age_hours=876000,
+            )
+            self.assertEqual(readiness["status"], "ok", readiness)
+            self.assertEqual(readiness["datasets"]["job_postings"]["verified_record_count"], 2)
 
             port = free_port()
             env = os.environ.copy()
