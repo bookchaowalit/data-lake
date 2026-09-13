@@ -20,6 +20,21 @@ from data_lake.ingest_scraping_captures import CAPTURES, _map_records, _records,
 
 
 class ScrapingCaptureIngestTests(unittest.TestCase):
+    def test_product_workspaces_resolve_to_declared_book_dev_paths(self) -> None:
+        for product in stack.PRODUCTS:
+            with self.subTest(product=product.product):
+                self.assertTrue(stack.product_workspace(product).is_dir())
+
+    def test_stack_can_select_a_bounded_product_subset(self) -> None:
+        selected = stack.select_products(["news,discovery", "news"])
+        self.assertEqual(
+            [product.product for product in selected], ["news", "discovery"]
+        )
+
+    def test_stack_rejects_unknown_product_selection(self) -> None:
+        with self.assertRaises(ValueError):
+            stack.select_products(["news,missing"])
+
     def test_all_frozen_products_have_snapshot_and_history_contracts(self) -> None:
         products = {spec.product for spec in CAPTURES}
         self.assertEqual(products, {"crypto", "stocks", "fx", "defi", "flights", "seo", "ai_tools", "news"})
@@ -113,6 +128,31 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
             self.assertEqual(str(row["event_time"]), "2026-09-07T00:00:00Z")
             self.assertEqual(json.loads(row["payload_json"])["price"], "1")
 
+    def test_delta_replay_keeps_full_landing_bytes_but_commits_only_new_records(self) -> None:
+        spec = next(spec for spec in CAPTURES if spec.product == "news" and spec.history)
+        full_raw = (
+            b"captured_at,article_id,title,url,source,source_url,published_at\n"
+            b"2026-09-07T00:00:00Z,a-1,Old,https://publisher.example/a,Publisher,https://publisher.example/feed,2026-09-06T00:00:00Z\n"
+            b"2026-09-07T01:00:00Z,a-2,New,https://publisher.example/b,Publisher,https://publisher.example/feed,2026-09-06T01:00:00Z\n"
+        )
+        appended_raw = (
+            b"captured_at,article_id,title,url,source,source_url,published_at\n"
+            b"2026-09-07T01:00:00Z,a-2,New,https://publisher.example/b,Publisher,https://publisher.example/feed,2026-09-06T01:00:00Z\n"
+        )
+        records = _map_records(spec, _records(appended_raw, spec.id_fields, spec.event_time_field))
+        with patch("data_lake.ingest_scraping_captures.ingest_payload", return_value={}) as ingest:
+            ingest_capture(
+                spec,
+                lake_uri="/tmp/news-delta-lake",
+                raw_override=full_raw,
+                records_override=records,
+                capture_mode="append_delta",
+            )
+        passed_raw, passed_records = ingest.call_args.args
+        self.assertEqual(passed_raw, full_raw)
+        self.assertEqual(len(passed_records), 1)
+        self.assertEqual(ingest.call_args.kwargs["metadata"]["capture_mode"], "append_delta")
+
     def test_stack_refuses_an_occupied_port_without_starting_children(self) -> None:
         with socket.socket() as occupied, tempfile.TemporaryDirectory() as directory:
             occupied.bind(("127.0.0.1", 0))
@@ -179,6 +219,28 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
             )
             start.assert_called_once()
             health.assert_called_once_with(stack.PRODUCTS)
+
+    def test_stack_smoke_can_run_news_only(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(stack, "start_products", return_value=[]) as start, patch.object(
+                stack, "check_health", return_value=[]
+            ) as health:
+                result = stack.main(
+                    [
+                        "--check",
+                        "--products",
+                        "news",
+                        "--lake-uri",
+                        directory,
+                        "--startup-seconds",
+                        "0.1",
+                    ]
+                )
+            self.assertEqual(result, 0)
+            start.assert_called_once()
+            selected = start.call_args.args[0]
+            self.assertEqual([product.product for product in selected], ["news"])
+            health.assert_called_once_with(selected)
 
 
 if __name__ == "__main__":

@@ -179,6 +179,72 @@ class DataLakeContractTests(unittest.TestCase):
             self.assertIn("html-1", rows[0]["payload_json"])
             self.assertEqual(rows[0]["content_type"], "text/html")
 
+    def test_identical_provider_payloads_get_distinct_idempotent_batches(self):
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            self.skipTest("pyarrow not installed")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            raw = b"<html><body>shared public page</body></html>"
+            common = dict(
+                raw=raw,
+                records=[{"id": "shared", "event_time": "2026-09-12T00:00:00Z"}],
+                source="unit-test-provider-collision",
+                domain="competition",
+                dataset="source-captures",
+                data_lake_uri=temp_dir,
+                input_format="html",
+                content_type="text/html",
+                event_time_field="event_time",
+                privacy_class="public",
+            )
+            first = ingest_payload(**common, metadata={"provider": "provider-a"})
+            second = ingest_payload(**common, metadata={"provider": "provider-b"})
+            retry = ingest_payload(**common, metadata={"provider": "provider-a"})
+
+            self.assertNotEqual(first["manifest_key"], second["manifest_key"])
+            self.assertNotEqual(first["bronze_key"], second["bronze_key"])
+            self.assertEqual(first["run_id"], retry["run_id"])
+            self.assertTrue(retry["manifest_existed"])
+            self.assertEqual(
+                ObjectStore(temp_dir).get_bytes(first["raw_key"]),
+                ObjectStore(temp_dir).get_bytes(second["raw_key"]),
+            )
+
+    def test_same_provider_payload_retry_reuses_committed_bronze(self):
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            self.skipTest("pyarrow not installed")
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            raw = b'{"provider":"time-dependent","items":[{"id":"a"}]}'
+            common = dict(
+                raw=raw,
+                source="unit-test-time-dependent",
+                domain="market",
+                dataset="demo",
+                data_lake_uri=temp_dir,
+                input_format="json",
+                event_time_field="event_time",
+                privacy_class="public",
+                metadata={"provider": "provider-a"},
+            )
+            first = ingest_payload(
+                records=[{"id": "a", "event_time": "2026-09-12T00:00:00Z"}],
+                **common,
+            )
+            retry = ingest_payload(
+                records=[{"id": "a", "event_time": "2026-09-13T00:00:00Z"}],
+                **common,
+            )
+
+            self.assertEqual(first["run_id"], retry["run_id"])
+            self.assertTrue(retry["manifest_existed"])
+            self.assertTrue(retry["bronze_existed"])
+            self.assertEqual(first["bronze_key"], retry["bronze_key"])
+
     def test_query_parquet_reads_bronze_payload(self):
         try:
             import duckdb  # noqa: F401
