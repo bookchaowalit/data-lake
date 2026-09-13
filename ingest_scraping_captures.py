@@ -9,8 +9,10 @@ read-only product APIs without contacting upstream providers:
 
 Each input is identified by its product contract. Re-running the command with
 unchanged bytes is idempotent because the lake uses the capture checksum as
-the batch identity. The event timestamps are preserved; an old capture is
-reported as stale by the API instead of being made to look fresh.
+the batch identity. Coordinators may supply the full landing bytes together
+with a validated record slice for append-only projections such as News history.
+The event timestamps are preserved; an old capture is reported as stale by the
+API instead of being made to look fresh.
 """
 
 from __future__ import annotations
@@ -55,7 +57,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "crypto.v1",
         "crypto_prices",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-crypto-data/data/exported/crypto_prices.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data/data/exported/crypto_prices.csv",
         ("coin_id", "currency"),
         "updated_at",
     ),
@@ -65,7 +67,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "crypto.v1",
         "crypto_prices",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-crypto-data/data/exported/crypto_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data/data/exported/crypto_history.csv",
         ("coin_id", "currency"),
         "date",
         True,
@@ -76,7 +78,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "stock.v1",
         "stock_prices",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-stock-data/data/exported/stock_prices.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data/data/exported/stock_prices.csv",
         ("symbol",),
         "updated_at",
     ),
@@ -86,7 +88,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "stock.v1",
         "stock_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-stock-data/data/exported/stock_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data/data/exported/stock_history.csv",
         ("symbol",),
         "date",
         True,
@@ -97,7 +99,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "fx.v1",
         "exchange_rates",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-fx-data/data/exported/exchange_rates.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data/data/exported/exchange_rates.csv",
         ("base", "currency"),
         "updated_at",
     ),
@@ -107,7 +109,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "fx.v1",
         "exchange_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-fx-data/data/exported/exchange_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data/data/exported/exchange_history.csv",
         ("base", "currency"),
         "date",
         True,
@@ -118,7 +120,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "defi.v1",
         "defi_yields",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-defi-data/data/exported/defi_yields.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-defi-data/data/exported/defi_yields.csv",
         ("pool_id",),
         "captured_at",
     ),
@@ -128,7 +130,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "market",
         "defi.v1",
         "defi_yields_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-defi-data/data/exported/defi_yields_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-defi-data/data/exported/defi_yields_history.csv",
         ("pool_id",),
         "captured_at",
         True,
@@ -139,7 +141,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "travel",
         "flight.v1",
         "flight_prices",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-flight-data/data/exported/flight_prices.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-flight-data/data/exported/flight_prices.csv",
         ("origin", "destination", "departure"),
         "scraped_at",
     ),
@@ -149,7 +151,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "travel",
         "flight.v1",
         "flight_prices_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-flight-data/data/exported/flight_prices_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-flight-data/data/exported/flight_prices_history.csv",
         ("origin", "destination", "departure"),
         "date",
         True,
@@ -160,7 +162,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "seo",
         "seo.v1",
         "seo_rankings",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-seo-data/data/exported/seo_rankings.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-seo-data/data/exported/seo_rankings.csv",
         ("url",),
         "captured_at",
     ),
@@ -170,7 +172,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "seo",
         "seo.v1",
         "seo_rankings_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-seo-data/data/exported/seo_rankings_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-seo-data/data/exported/seo_rankings_history.csv",
         ("url",),
         "captured_at",
         True,
@@ -181,7 +183,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "ai-tools",
         "ai_tools.v1",
         "ai_tools",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-ai-tools-data/data/exported/ai_tools.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-ai/book-ai-tools-data/data/exported/ai_tools.csv",
         ("tool_id",),
         "captured_at",
     ),
@@ -191,7 +193,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "ai-tools",
         "ai_tools.v1",
         "ai_tools_history",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-ai-tools-data/data/exported/ai_tools_history.csv",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-ai/book-ai-tools-data/data/exported/ai_tools_history.csv",
         ("tool_id",),
         "captured_at",
         True,
@@ -400,17 +402,58 @@ def _lineage_contract(spec: CaptureSpec, lake_uri: str) -> LakeProductContract:
     )
 
 
-def ingest_capture(spec: CaptureSpec, *, lake_uri: str, validate_only: bool = False, update_lineage: bool = False) -> dict[str, Any]:
+def ingest_capture(
+    spec: CaptureSpec,
+    *,
+    lake_uri: str,
+    validate_only: bool = False,
+    update_lineage: bool = False,
+    raw_override: bytes | None = None,
+    records_override: list[dict[str, Any]] | None = None,
+    capture_mode: str | None = None,
+) -> dict[str, Any]:
+    """Validate or ingest one capture contract.
+
+    ``raw_override`` and ``records_override`` let a coordinator preserve the
+    exact full source bytes while committing only a safe record slice.  News
+    history files are append-only projections, so the bounded News runner uses
+    this to retain the full landing object and send only newly appended rows to
+    Bronze.  Normal callers continue to read and map the capture file itself.
+    """
     path = ROOT / spec.path
-    with path.open("rb") as capture:
-        raw = capture.read(32 * 1024 * 1024 + 1)
+    if raw_override is None:
+        with path.open("rb") as capture:
+            raw = capture.read(32 * 1024 * 1024 + 1)
+    else:
+        raw = bytes(raw_override)
     if len(raw) > 32 * 1024 * 1024:
         raise ValueError("Capture exceeds 32 MiB replay limit")
-    records = _map_records(spec, _records(raw, spec.id_fields, spec.event_time_field))
+    records = (
+        list(records_override)
+        if records_override is not None
+        else _map_records(spec, _records(raw, spec.id_fields, spec.event_time_field))
+    )
     if not records:
         raise ValueError(f"capture is empty: {spec.path}")
     if validate_only:
         return {"product": spec.product, "dataset": spec.dataset, "record_count": len(records), "validated": True}
+    metadata = {
+        "adapter": spec.source,
+        "capture_mapping_version": (
+            "4" if spec.product == "news" else "3" if spec.product == "seo" else "2"
+        ),
+        "event_time_field": spec.event_time_field,
+        "id_fields": list(spec.id_fields),
+        "product": spec.product,
+        "product_schema_version": spec.schema_version,
+        "capture_path": spec.path,
+        "dataset_role": "history" if spec.history else "snapshot",
+    }
+    # Keep the legacy metadata shape for ordinary full-file replays.  The
+    # append-delta marker is needed only when a coordinator deliberately maps
+    # a slice of a cumulative source projection.
+    if capture_mode and capture_mode != "snapshot":
+        metadata["capture_mode"] = capture_mode
     result = ingest_payload(
         raw,
         records,
@@ -423,18 +466,7 @@ def ingest_capture(spec: CaptureSpec, *, lake_uri: str, validate_only: bool = Fa
         source_record_id_field="id",
         event_time_field=spec.event_time_field,
         content_type="text/csv",
-        metadata={
-            "adapter": spec.source,
-            "capture_mapping_version": (
-                "4" if spec.product == "news" else "3" if spec.product == "seo" else "2"
-            ),
-            "event_time_field": spec.event_time_field,
-            "id_fields": list(spec.id_fields),
-            "product": spec.product,
-            "product_schema_version": spec.schema_version,
-            "capture_path": spec.path,
-            "dataset_role": "history" if spec.history else "snapshot",
-        },
+        metadata=metadata,
         privacy_class="public",
         retention_class="operational-plus-history" if spec.history else "operational",
     )

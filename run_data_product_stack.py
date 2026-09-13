@@ -40,20 +40,56 @@ class ProductRuntime:
     repository: str
     module: str
     port: int
+    relative_path: str = ""
 
 
 PRODUCTS: tuple[ProductRuntime, ...] = (
-    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101),
-    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102),
-    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103),
-    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104),
-    ProductRuntime("flights", "book-flight-data", "book_flight.api", 8105),
-    ProductRuntime("seo", "book-seo-data", "book_seo.api", 8106),
-    ProductRuntime("ai_tools", "book-ai-tools-data", "book_ai_tools.api", 8107),
-    ProductRuntime("news", "book-news-scraping", "news_data.api", 8108),
-    ProductRuntime("discovery", "book-discovery-data", "discovery_data.api", 8110),
-    ProductRuntime("jobs", "book-job-data", "book_job_data.api", 8109),
+    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101, "book-products/book-crypto-data"),
+    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102, "book-products/book-stock-data"),
+    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103, "book-products/book-fx-data"),
+    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104, "book-products/book-defi-data"),
+    ProductRuntime("flights", "book-flight-data", "book_flight.api", 8105, "book-products/book-flight-data"),
+    ProductRuntime("seo", "book-seo-data", "book_seo.api", 8106, "book-products/book-seo-data"),
+    ProductRuntime("ai_tools", "book-ai-tools-data", "book_ai_tools.api", 8107, "book-ai/book-ai-tools-data"),
+    ProductRuntime("news", "book-news-scraping", "news_data.api", 8108, "book-apps/tools/book-news-scraping"),
+    ProductRuntime("discovery", "book-discovery-data", "discovery_data.api", 8110, "book-apps/tools/book-discovery-data"),
+    ProductRuntime("jobs", "book-job-data", "book_job_data.api", 8109, "book-apps/tools/book-job-data"),
 )
+
+
+def product_workspace(product: ProductRuntime) -> Path:
+    """Resolve a product workspace from the Book Dev owner boundary."""
+    owner_root = ROOT / "projects/product/engineering/book-dev/github/bookchaowalit"
+    if product.relative_path:
+        return owner_root / product.relative_path
+    # Keep compatibility for callers constructing ProductRuntime with the
+    # original fields only.
+    return owner_root / "book-apps/tools" / product.repository
+
+
+def select_products(values: Iterable[str] | None = None) -> tuple[ProductRuntime, ...]:
+    """Select a bounded API subset while preserving the declared order."""
+    if not values:
+        return PRODUCTS
+    names: list[str] = []
+    for value in values:
+        names.extend(part.strip() for part in value.split(",") if part.strip())
+    by_name = {product.product: product for product in PRODUCTS}
+    unknown = sorted({name for name in names if name not in by_name})
+    if unknown:
+        raise ValueError(
+            "Unknown product(s): "
+            + ", ".join(unknown)
+            + ". Choose from: "
+            + ", ".join(product.product for product in PRODUCTS)
+        )
+    selected: list[ProductRuntime] = []
+    seen: set[str] = set()
+    for name in names:
+        if name not in seen:
+            selected.append(by_name[name])
+            seen.add(name)
+    return tuple(selected)
 
 
 def _api_url(product: ProductRuntime, endpoint: str = "/healthz") -> str:
@@ -158,11 +194,12 @@ def start_products(
     processes: list[subprocess.Popen[bytes]] = []
     try:
         for product in products:
-            repo_dir = (
-                ROOT
-                / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools"
-                / product.repository
-            )
+            repo_dir = product_workspace(product)
+            if not repo_dir.is_dir():
+                raise OSError(f"Missing product workspace: {product.repository}")
+            src_dir = repo_dir / "src"
+            pythonpath = [str(src_dir)] if src_dir.is_dir() else []
+            pythonpath.extend([str(repo_dir), str(SCRIPTS)])
             env = os.environ.copy()
             env.update(
                 {
@@ -174,7 +211,7 @@ def start_products(
                     "ALLOW_EXTERNAL_WRITES": "false",
                     "ALLOW_REFRESH": "false",
                     "SOLO_EMPIRE_DATA_LAKE_URI": lake_uri,
-                    "PYTHONPATH": str(repo_dir / "src"),
+                    "PYTHONPATH": os.pathsep.join(pythonpath),
                 }
             )
             with (log_dir / f"{product.product}.log").open("ab") as log_file:
@@ -216,6 +253,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="Start APIs, verify health, then stop them"
     )
     parser.add_argument(
+        "--products",
+        action="append",
+        metavar="NAME[,NAME...]",
+        help="Run a bounded subset (repeat or comma-separate product names; default: all)",
+    )
+    parser.add_argument(
         "--require-job-readiness",
         action="store_true",
         help="Run the read-only job-data gate before starting any API",
@@ -240,6 +283,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    try:
+        products = select_products(args.products)
+    except ValueError as exc:
+        print(f"Stack blocked: {exc}")
+        return 2
+    if not products:
+        print("Stack blocked: at least one product is required.")
+        return 2
     if args.require_job_readiness:
         readiness = check_job_readiness(
             args.lake_uri,
@@ -257,7 +308,7 @@ def main(argv: list[str] | None = None) -> int:
             return 2
     try:
         processes = start_products(
-            PRODUCTS, lake_uri=args.lake_uri, log_dir=args.log_dir
+            products, lake_uri=args.lake_uri, log_dir=args.log_dir
         )
     except OSError:
         print(
@@ -269,7 +320,7 @@ def main(argv: list[str] | None = None) -> int:
         if any(process.poll() is not None for process in processes):
             print("A data-product API failed to start; inspect the product logs.")
             return 1
-        results = check_health(PRODUCTS)
+        results = check_health(products)
         failed = [item for item in results if not item["ok"]]
         for item in results:
             if item["ok"]:
