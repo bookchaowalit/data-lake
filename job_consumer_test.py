@@ -39,6 +39,14 @@ class JobClientTests(unittest.TestCase):
         guard.check_job_contract(errors)
         self.assertEqual(errors, [], msg="\n".join(errors))
 
+    def test_csv_guard_uses_basename_boundaries(self):
+        self.assertTrue(guard._contains_csv_reference("data/leads.csv", "leads.csv"))
+        self.assertFalse(
+            guard._contains_csv_reference(
+                "data/property_social_leads.csv", "leads.csv"
+            )
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

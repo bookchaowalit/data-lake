@@ -37,12 +37,12 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
 
     def test_all_frozen_products_have_snapshot_and_history_contracts(self) -> None:
         products = {spec.product for spec in CAPTURES}
-        self.assertEqual(products, {"crypto", "stocks", "fx", "defi", "flights", "seo", "ai_tools", "news"})
+        self.assertEqual(products, {"crypto", "stocks", "fx", "defi", "flights", "seo", "ai_tools", "news", "property"})
         for product in products:
             datasets = {spec.dataset for spec in CAPTURES if spec.product == product}
             self.assertTrue(any(not spec.history for spec in CAPTURES if spec.product == product))
             self.assertTrue(any(spec.history for spec in CAPTURES if spec.product == product))
-            self.assertEqual(len(datasets), 1 if product == "crypto" else 2)
+            self.assertEqual(len(datasets), 3 if product == "property" else 1 if product == "crypto" else 2)
 
     def test_csv_rows_get_stable_source_ids_without_changing_payload_fields(self) -> None:
         raw = b"coin_id,currency,price,updated_at\nbitcoin,usd,1,2026-09-07T00:00:00Z\n"
