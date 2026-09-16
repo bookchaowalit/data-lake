@@ -192,6 +192,15 @@ class ObjectStore:
                     "DATA_LAKE_CLOUD_WRITE_ENABLED=true only for an intentional "
                     "R2/S3 run"
                 )
+            # Reject oversized cloud payloads before any provider call. This
+            # keeps the safety budget deterministic and makes the guard truly
+            # network-free when a caller hands us an object that is too large.
+            max_bytes = _cloud_max_object_bytes()
+            if max_bytes and len(data) > max_bytes:
+                raise StorageError(
+                    f"Cloud object exceeds DATA_LAKE_CLOUD_MAX_OBJECT_BYTES "
+                    f"({len(data)} > {max_bytes})"
+                )
         full_key = self._full_key(key)
         head = self._run_aws([
             "s3api", "head-object", "--bucket", self.bucket, "--key", full_key,
@@ -230,14 +239,6 @@ class ObjectStore:
             # A permission, endpoint, or transient provider failure must not be
             # mistaken for absence and followed by an unsafe overwrite.
             raise StorageError(f"Object metadata lookup failed for {key}")
-
-        if remote_cloud:
-            max_bytes = _cloud_max_object_bytes()
-            if max_bytes and len(data) > max_bytes:
-                raise StorageError(
-                    f"Cloud object exceeds DATA_LAKE_CLOUD_MAX_OBJECT_BYTES "
-                    f"({len(data)} > {max_bytes})"
-                )
 
         # Use the S3 conditional create primitive so two workers racing on a
         # new immutable key cannot overwrite one another.  A temporary file is

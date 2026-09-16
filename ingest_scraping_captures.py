@@ -282,6 +282,40 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "captured_at",
         True,
     ),
+    # Property captures remain held behind the source permission gate below.
+    # They are registered here so --validate-only can reconcile headers and
+    # lake-first lineage without silently enabling collection or publication.
+    CaptureSpec(
+        "property",
+        "book-property-scraping",
+        "property",
+        "property.v1",
+        "property_listings",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/exported/property_listings.csv",
+        ("url",),
+        "scraped_at",
+    ),
+    CaptureSpec(
+        "property",
+        "book-property-scraping",
+        "property",
+        "property.v1",
+        "property_history",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/exported/property_history.csv",
+        ("title", "type"),
+        "date",
+        True,
+    ),
+    CaptureSpec(
+        "property",
+        "book-property-scraping",
+        "property",
+        "property.v1",
+        "property_social_leads",
+        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/exported/property_social_leads.csv",
+        ("url",),
+        "captured_at",
+    ),
 )
 
 
