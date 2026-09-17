@@ -190,13 +190,13 @@ def _key(row: dict[str, str], spec: CaptureSpec, row_number: int) -> str:
     return value
 
 
-def _capture_lookup() -> dict[tuple[str, str], str]:
+def _capture_lookup(source_root: Path = SOURCE_ROOT) -> dict[tuple[str, str], str]:
     """Use history capture timestamps for snapshots that omit scrape time."""
     lookup: dict[tuple[str, str], str] = {}
     for spec in CAPTURES:
         if not spec.history:
             continue
-        path = SOURCE_ROOT / spec.filename
+        path = source_root / spec.filename
         if not path.is_file():
             continue
         _, rows = _read_csv(path)
@@ -280,10 +280,11 @@ def ingest_capture(
     spec: CaptureSpec,
     *,
     lake_uri: str,
+    source_root: Path = SOURCE_ROOT,
     capture_lookup: dict[tuple[str, str], str],
     validate_only: bool = False,
 ) -> dict[str, Any]:
-    path = SOURCE_ROOT / spec.filename
+    path = source_root / spec.filename
     raw, rows = _read_csv(path)
     records = map_records(spec, rows, capture_lookup=capture_lookup)
     if not records:
@@ -335,6 +336,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--lake-uri", default=str(ROOT / "data" / "lake-local" / "scraping-captures-v2")
     )
+    parser.add_argument("--source-root", type=Path, default=SOURCE_ROOT)
     parser.add_argument("--source", action="append", choices=sorted({item.source_id for item in CAPTURES}))
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--validate-only", action="store_true")
@@ -344,14 +346,15 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     selected = set(args.source or {item.source_id for item in CAPTURES})
-    capture_lookup = _capture_lookup()
+    source_root = args.source_root.resolve()
+    capture_lookup = _capture_lookup(source_root)
     results: list[dict[str, Any]] = []
     skipped: list[dict[str, str]] = []
     errors: list[dict[str, str]] = []
     for spec in CAPTURES:
         if spec.source_id not in selected:
             continue
-        path = SOURCE_ROOT / spec.filename
+        path = source_root / spec.filename
         if not path.is_file():
             skipped.append({"source": spec.source_id, "dataset": spec.dataset, "path": str(path.relative_to(ROOT))})
             continue
@@ -360,6 +363,7 @@ def main(argv: list[str] | None = None) -> int:
                 ingest_capture(
                     spec,
                     lake_uri=args.lake_uri,
+                    source_root=source_root,
                     capture_lookup=capture_lookup,
                     validate_only=args.validate_only,
                 )

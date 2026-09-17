@@ -46,8 +46,9 @@ class CaptureSpec:
     dataset: str
     path: str
     id_fields: tuple[str, ...]
-    event_time_field: str
+    event_time_field: str | None
     history: bool = False
+    deduplicate_exact_rows: bool = False
 
 
 CAPTURES: tuple[CaptureSpec, ...] = (
@@ -59,7 +60,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "crypto_prices",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data/data/exported/crypto_prices.csv",
         ("coin_id", "currency"),
-        "updated_at",
+        None,
     ),
     CaptureSpec(
         "crypto",
@@ -68,8 +69,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "crypto.v1",
         "crypto_prices",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data/data/exported/crypto_history.csv",
-        ("coin_id", "currency"),
-        "date",
+        ("coin_id", "currency", "date"),
+        None,
+        True,
         True,
     ),
     CaptureSpec(
@@ -80,7 +82,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "stock_prices",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data/data/exported/stock_prices.csv",
         ("symbol",),
-        "updated_at",
+        None,
     ),
     CaptureSpec(
         "stocks",
@@ -89,8 +91,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "stock.v1",
         "stock_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data/data/exported/stock_history.csv",
-        ("symbol",),
-        "date",
+        ("symbol", "timestamp", "scraped_at"),
+        None,
+        True,
         True,
     ),
     CaptureSpec(
@@ -101,7 +104,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "exchange_rates",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data/data/exported/exchange_rates.csv",
         ("base", "currency"),
-        "updated_at",
+        "date",
     ),
     CaptureSpec(
         "fx",
@@ -110,8 +113,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "fx.v1",
         "exchange_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data/data/exported/exchange_history.csv",
-        ("base", "currency"),
+        ("base", "currency", "date"),
         "date",
+        True,
         True,
     ),
     CaptureSpec(
@@ -122,7 +126,7 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "defi_yields",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-defi-data/data/exported/defi_yields.csv",
         ("pool_id",),
-        "captured_at",
+        None,
     ),
     CaptureSpec(
         "defi",
@@ -131,8 +135,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "defi.v1",
         "defi_yields_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-defi-data/data/exported/defi_yields_history.csv",
-        ("pool_id",),
-        "captured_at",
+        ("pool_id", "scraped_at"),
+        None,
+        True,
         True,
     ),
     CaptureSpec(
@@ -163,8 +168,8 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "seo.v1",
         "seo_rankings",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-seo-data/data/exported/seo_rankings.csv",
-        ("url",),
-        "captured_at",
+        ("keyword", "target_domain", "location", "device"),
+        "observed_at",
     ),
     CaptureSpec(
         "seo",
@@ -173,8 +178,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "seo.v1",
         "seo_rankings_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-seo-data/data/exported/seo_rankings_history.csv",
-        ("url",),
-        "captured_at",
+        ("keyword", "target_domain", "observed_at"),
+        "observed_at",
+        True,
         True,
     ),
     CaptureSpec(
@@ -215,8 +221,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "news.v1",
         "articles_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping/data/exported/matichon_news_history.csv",
-        ("source", "article_id"),
+        ("source", "article_id", "captured_at"),
         "captured_at",
+        True,
         True,
     ),
     CaptureSpec(
@@ -236,8 +243,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "news.v1",
         "articles_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping/data/exported/notebookspec_tech_history.csv",
-        ("source", "article_id"),
+        ("source", "article_id", "captured_at"),
         "captured_at",
+        True,
         True,
     ),
     CaptureSpec(
@@ -257,8 +265,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "news.v1",
         "articles_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping/data/exported/thai_business_news_history.csv",
-        ("source", "article_id"),
+        ("source", "article_id", "captured_at"),
         "captured_at",
+        True,
         True,
     ),
     CaptureSpec(
@@ -278,8 +287,9 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "news.v1",
         "articles_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping/data/exported/thai_tech_news_history.csv",
-        ("source", "article_id"),
+        ("source", "article_id", "captured_at"),
         "captured_at",
+        True,
         True,
     ),
     # Property captures remain held behind the source permission gate below.
@@ -319,6 +329,20 @@ CAPTURES: tuple[CaptureSpec, ...] = (
 )
 
 
+def _normalize_event_timestamp(value: str) -> str:
+    """Validate event timestamps without inventing a timezone."""
+    stamp = value.strip()
+    try:
+        parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError("Invalid event timestamp") from None
+    if len(stamp) == 10:
+        return stamp
+    if parsed.tzinfo is None:
+        raise ValueError("Timestamp requires a timezone")
+    return stamp
+
+
 def _records(raw: bytes, id_fields: Iterable[str], event_time_field: str | None = None) -> list[dict[str, Any]]:
     reader = csv.DictReader(io.StringIO(raw.decode("utf-8-sig")))
     fields = tuple(id_fields)
@@ -337,14 +361,24 @@ def _records(raw: bytes, id_fields: Iterable[str], event_time_field: str | None 
         if event_time_field:
             stamp = str(normalized[event_time_field]).strip()
             try:
-                parsed = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
-                if len(stamp) != 10 and parsed.tzinfo is None:
-                    raise ValueError("Timestamp requires a timezone")
+                normalized[event_time_field] = _normalize_event_timestamp(stamp)
             except ValueError:
                 raise ValueError(f"Invalid event timestamp at row {index}") from None
         normalized["id"] = "|".join(parts)
         records.append(normalized)
     return records
+
+
+def _deduplicate_exact_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for record in records:
+        fingerprint = json.dumps(record, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        if fingerprint in seen:
+            continue
+        seen.add(fingerprint)
+        unique.append(record)
+    return unique
 
 
 def _map_records(spec: CaptureSpec, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -388,33 +422,41 @@ def _map_records(spec: CaptureSpec, records: list[dict[str, Any]]) -> list[dict[
         except ValueError:
             status = 0
         page_status = str(row.get("data_status") or "").strip().lower()
-        reachable = 200 <= status < 400 and page_status == "ok"
-        url = str(row.get("url") or "").strip()
-        domain = str(row.get("domain") or "").strip().lower()
+        found_raw = str(row.get("found") or "").strip()
+        if status_raw or page_status:
+            reachable = 200 <= status < 400 and page_status == "ok"
+        else:
+            reachable = found_raw.lower() in {"1", "true", "yes"}
+        url = str(row.get("result_url") or row.get("best_url") or row.get("url") or "").strip()
+        domain = str(row.get("target_domain") or row.get("domain") or row.get("best_domain") or "").strip().lower()
+        keyword = str(row.get("keyword") or "").strip()
+        location = str(row.get("location") or "global").strip() or "global"
+        device = str(row.get("device") or "desktop").strip() or "desktop"
+        provider = str(row.get("provider") or row.get("source") or "public_page_check").strip()
         observed_at = str(row.get(spec.event_time_field) or "").strip()
         item = dict(row)
         item.update(
             {
-                "keyword": f"owned-page|{url}",
+                "keyword": keyword or (f"owned-page|{url}" if url else "owned-page"),
                 "target_domain": domain,
-                "location": "global",
-                "device": "desktop",
-                "provider": str(row.get("source") or "public_page_check").strip(),
-                "found": "true" if reachable else "false",
-                "rank": "",
-                "best_rank": "",
+                "location": location,
+                "device": device,
+                "provider": provider,
+                "found": found_raw or ("true" if reachable else "false"),
+                "rank": str(row.get("rank") or ""),
+                "best_rank": str(row.get("best_rank") or ""),
                 "result_url": url,
-                "best_url": url,
-                "result_title": str(row.get("title") or "").strip(),
-                "best_title": str(row.get("title") or "").strip(),
-                "total_results": "",
+                "best_url": str(row.get("best_url") or url).strip(),
+                "result_title": str(row.get("result_title") or row.get("title") or "").strip(),
+                "best_title": str(row.get("best_title") or row.get("result_title") or row.get("title") or "").strip(),
+                "total_results": str(row.get("total_results") or ""),
                 "observed_at": observed_at,
-                "capture_kind": "owned_page_provenance",
-                "page_http_status": status,
+                "capture_kind": "owned_page_provenance" if provider == "public_page_check" else "serp_ranking",
+                "page_http_status": status if status_raw else "",
                 "page_canonical_url": str(row.get("canonical") or "").strip(),
                 "page_content_length": str(row.get("content_length") or "").strip(),
                 "page_data_status": page_status,
-                "id": str(row.get("id") or url),
+                "id": str(row.get("id") or ""),
             }
         )
         mapped.append(item)
@@ -469,12 +511,15 @@ def ingest_capture(
     )
     if not records:
         raise ValueError(f"capture is empty: {spec.path}")
+    raw_record_count = len(records)
+    if spec.deduplicate_exact_rows:
+        records = _deduplicate_exact_records(records)
     if validate_only:
         return {"product": spec.product, "dataset": spec.dataset, "record_count": len(records), "validated": True}
     metadata = {
         "adapter": spec.source,
         "capture_mapping_version": (
-            "4" if spec.product == "news" else "3" if spec.product == "seo" else "2"
+            "4" if spec.product in {"news", "seo"} else "3"
         ),
         "event_time_field": spec.event_time_field,
         "id_fields": list(spec.id_fields),
@@ -482,6 +527,8 @@ def ingest_capture(
         "product_schema_version": spec.schema_version,
         "capture_path": spec.path,
         "dataset_role": "history" if spec.history else "snapshot",
+        "raw_record_count": raw_record_count,
+        "replay_record_count": len(records),
     }
     # Keep the legacy metadata shape for ordinary full-file replays.  The
     # append-delta marker is needed only when a coordinator deliberately maps
