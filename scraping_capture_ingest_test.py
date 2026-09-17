@@ -16,7 +16,13 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake import run_data_product_stack as stack
-from data_lake.ingest_scraping_captures import CAPTURES, _map_records, _records, ingest_capture
+from data_lake.ingest_scraping_captures import (
+    CAPTURES,
+    _deduplicate_exact_records,
+    _map_records,
+    _records,
+    ingest_capture,
+)
 
 
 class ScrapingCaptureIngestTests(unittest.TestCase):
@@ -44,6 +50,12 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
             self.assertTrue(any(spec.history for spec in CAPTURES if spec.product == product))
             self.assertEqual(len(datasets), 3 if product == "property" else 1 if product == "crypto" else 2)
 
+    def test_history_identity_includes_temporal_projection_field(self) -> None:
+        temporal_fields = {"date", "observed_at", "scraped_at", "timestamp"}
+        for spec in CAPTURES:
+            if spec.product in {"crypto", "stocks", "fx", "defi", "seo"} and spec.history:
+                self.assertTrue(temporal_fields.intersection(spec.id_fields), spec)
+
     def test_csv_rows_get_stable_source_ids_without_changing_payload_fields(self) -> None:
         raw = b"coin_id,currency,price,updated_at\nbitcoin,usd,1,2026-09-07T00:00:00Z\n"
         records = _records(raw, ("coin_id", "currency"))
@@ -51,6 +63,24 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
         self.assertEqual(records[0]["id"], "bitcoin|usd")
         self.assertEqual(records[0]["coin_id"], "bitcoin")
         self.assertEqual(records[0]["updated_at"], "2026-09-07T00:00:00Z")
+
+    def test_legacy_projection_timestamp_is_rejected_without_timezone(self) -> None:
+        raw = b"coin_id,currency,updated_at\nbitcoin,usd,2026-09-07 12:00:00\n"
+        with self.assertRaises(ValueError):
+            _records(raw, ("coin_id", "currency"), "updated_at")
+
+    def test_projection_timestamp_is_preserved_when_not_declared_as_event_time(self) -> None:
+        raw = b"coin_id,currency,updated_at\nbitcoin,usd,2026-09-07 12:00:00\n"
+        records = _records(raw, ("coin_id", "currency"))
+        self.assertEqual(records[0]["updated_at"], "2026-09-07 12:00:00")
+
+    def test_exact_duplicate_rows_are_replayed_once(self) -> None:
+        records = [
+            {"id": "THB|EUR|2026-09-11", "rate": "0.02609"},
+            {"id": "THB|EUR|2026-09-11", "rate": "0.02609"},
+            {"id": "THB|USD|2026-09-11", "rate": "0.03024"},
+        ]
+        self.assertEqual(_deduplicate_exact_records(records), [records[0], records[2]])
 
     def test_paths_use_exported_capture_boundary(self) -> None:
         for spec in CAPTURES:
@@ -77,18 +107,18 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
     def test_seo_capture_maps_to_owned_page_provenance_without_a_serp_rank(self) -> None:
         spec = next(spec for spec in CAPTURES if spec.product == "seo" and not spec.history)
         raw = (
-            b"captured_at,domain,url,http_status,title,canonical,content_length,data_status,rank,keyword,source\n"
-            b"2026-09-07T00:00:00Z,example.com,https://example.com,200,Example,,123,ok,,,public_page_check\n"
+            b"scraped_at,keyword,target_domain,location,device,provider,found,best_rank,rank,best_domain,best_url,result_url,best_title,result_title,observed_at,total_results\n"
+            b"2026-09-07T00:00:00Z,python developer,example.com,global,desktop,public_page_check,false,,,example.com,,,Example,Example,2026-09-07T00:00:00Z,2\n"
         )
         records = _map_records(spec, _records(raw, spec.id_fields, spec.event_time_field))
         self.assertEqual(len(records), 1)
-        self.assertEqual(records[0]["id"], "https://example.com")
+        self.assertEqual(records[0]["id"], "python developer|example.com|global|desktop")
         self.assertEqual(records[0]["capture_kind"], "owned_page_provenance")
-        self.assertEqual(records[0]["keyword"], "owned-page|https://example.com")
+        self.assertEqual(records[0]["keyword"], "python developer")
         self.assertEqual(records[0]["target_domain"], "example.com")
-        self.assertEqual(records[0]["result_url"], "https://example.com")
+        self.assertEqual(records[0]["result_url"], "")
         self.assertEqual(records[0]["rank"], "")
-        self.assertEqual(records[0]["found"], "true")
+        self.assertEqual(records[0]["found"], "false")
 
     def test_news_capture_maps_to_attributed_rss_article(self) -> None:
         spec = next(spec for spec in CAPTURES if spec.product == "news" and not spec.history)
@@ -125,7 +155,7 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
             self.assertTrue(second["manifest_existed"])
             self.assertEqual((lake / first["raw_key"]).read_bytes(), raw)
             row = pq.ParquetFile(lake / first["bronze_key"]).read().to_pylist()[0]
-            self.assertEqual(str(row["event_time"]), "2026-09-07T00:00:00Z")
+            self.assertIsNone(row["event_time"])
             self.assertEqual(json.loads(row["payload_json"])["price"], "1")
 
     def test_delta_replay_keeps_full_landing_bytes_but_commits_only_new_records(self) -> None:
