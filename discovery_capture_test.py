@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from copy import deepcopy
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[3]
@@ -36,6 +37,28 @@ class CaptureTests(unittest.TestCase):
 
     def state(self):
         return json.loads((self.control/(self.source['id']+'.json')).read_text())
+
+    def test_capture_lock_is_nonblocking_and_preserves_the_lock_file(self):
+        lock_path = self.control / 'source.lock'
+        with lock_path.open('a+b') as first:
+            runtime.lock_capture_file(first)
+            with lock_path.open('a+b') as second:
+                with self.assertRaises(OSError):
+                    runtime.lock_capture_file(second)
+
+    def test_windows_capture_lock_uses_a_persistent_first_byte(self):
+        lock_path = self.control / 'windows-source.lock'
+        calls = []
+        msvcrt = SimpleNamespace(
+            LK_NBLCK=17,
+            locking=lambda fd, operation, length: calls.append((fd, operation, length)),
+        )
+        with patch.dict(sys.modules, {'msvcrt': msvcrt}):
+            with lock_path.open('a+b') as lock:
+                runtime.lock_capture_file(lock, platform='nt')
+        self.assertEqual(lock_path.read_bytes(), b'\0')
+        self.assertEqual(len(calls), 1)
+        self.assertEqual(calls[0][1:], (msvcrt.LK_NBLCK, 1))
 
     def test_landing_bronze_before_replay_and_idempotent(self):
         self.assertEqual(self.capture()['status'],'captured')

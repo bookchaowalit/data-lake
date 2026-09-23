@@ -1,8 +1,12 @@
 """Offline ownership and local scaffold checks; no live source claims."""
 import json
 import subprocess
+import sys
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -105,10 +109,30 @@ class DiscoveryPortfolioTests(unittest.TestCase):
             'source_registration_required': pending,
         })
         self.assertEqual(self.registry['summary']['declared_categories'], 76)
-        self.assertEqual(self.registry['summary']['observed_live'], 74)
+        self.assertEqual(self.registry['summary']['observed_live'], 73)
         self.assertEqual(self.registry['summary']['registered_adapter_capabilities'], 76)
-        self.assertEqual(self.registry['summary']['adapter_capable_without_current_record'], 2)
+        self.assertEqual(self.registry['summary']['adapter_capable_without_current_record'], 3)
         self.assertEqual(self.registry['summary']['source_registration_required'], 0)
+
+    def test_child_cli_uses_utf8_for_unicode_json_on_windows(self):
+        sys.path.insert(0, str(ROOT / 'infra' / 'scripts'))
+        from discovery import portfolio
+
+        calls = []
+
+        def completed(args, **kwargs):
+            calls.append(kwargs)
+            return subprocess.CompletedProcess(args, 0, stdout='{}', stderr='')
+
+        with patch.object(portfolio.subprocess, 'run', side_effect=completed):
+            with redirect_stdout(StringIO()):
+                result = portfolio.main(['status', '--domain', 'scholarship'])
+
+        self.assertEqual(result, 1)
+        self.assertTrue(calls)
+        for kwargs in calls:
+            self.assertEqual(kwargs.get('encoding'), 'utf-8')
+            self.assertEqual(kwargs['env'].get('PYTHONIOENCODING'), 'utf-8')
 
     def test_coverage_command_is_offline_and_filterable(self):
         script = ROOT / 'infra/scripts/discovery/portfolio.py'

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import sys
 import tempfile
 import unittest
@@ -46,6 +47,17 @@ class DataLakeContractTests(unittest.TestCase):
         self.assertEqual(settings["s3_url_style"], "path")
         self.assertTrue(settings["s3_use_ssl"])
         self.assertEqual(settings["s3_region"], "auto")
+
+    def test_windows_drive_path_is_accepted_as_local_object_store(self):
+        if os.name != "nt":
+            self.skipTest("Windows drive path behavior requires Windows")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = ObjectStore(temp_dir)
+            self.assertEqual(store.scheme, "file")
+            self.assertEqual(store.root, Path(temp_dir).resolve())
+            file_uri = ObjectStore(Path(temp_dir).as_uri())
+            self.assertEqual(file_uri.scheme, "file")
+            self.assertEqual(file_uri.root, Path(temp_dir).resolve())
 
     def test_local_object_store_is_immutable_and_idempotent(self):
         with tempfile.TemporaryDirectory() as temp_dir:
