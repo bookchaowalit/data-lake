@@ -6,7 +6,6 @@ transport, source locks, capture lineage and failure state, never domain facts.
 from __future__ import annotations
 
 import argparse
-import fcntl
 import hashlib
 import json
 import os
@@ -29,6 +28,25 @@ MAX_BYTES = 2_000_000
 
 class CaptureError(ValueError):
     pass
+
+
+def lock_capture_file(lock, *, platform=None):
+    """Acquire the per-source lock without blocking on POSIX or Windows."""
+    platform = platform or os.name
+    if platform == 'nt':
+        import msvcrt
+
+        # msvcrt locks a byte range, so keep byte zero present and lock it.
+        lock.seek(0, os.SEEK_END)
+        if lock.tell() == 0:
+            lock.write(b'\0')
+            lock.flush()
+        lock.seek(0)
+        msvcrt.locking(lock.fileno(), msvcrt.LK_NBLCK, 1)
+        return
+
+    import fcntl
+    fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -174,8 +192,8 @@ def acquire(source, root, state_dir, normalize, validate, *, fetcher=fetch, now=
         raise CaptureError('source not enabled and reviewed')
     now = now or datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
     state_path = state_dir / (source['id'] + '.json')
-    with (state_dir / (source['id'] + '.lock')).open('w') as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    with (state_dir / (source['id'] + '.lock')).open('a+b') as lock:
+        lock_capture_file(lock)
         previous = read_state(state_path)
         if previous.get('last_attempt_at'):
             elapsed = (datetime.fromisoformat(now.replace('Z','+00:00')) - datetime.fromisoformat(previous['last_attempt_at'].replace('Z','+00:00'))).total_seconds()

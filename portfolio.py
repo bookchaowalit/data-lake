@@ -143,7 +143,20 @@ def main(argv=None):
             if source_id is not None:
                 invocation.extend(['--source-id',source_id])
             try:
-                run=subprocess.run(invocation,cwd=repo,env={**os.environ,'PYTHONPATH':str(repo/'src'),'SOLO_EMPIRE_ROOT':str(ROOT)},capture_output=True,text=True,timeout=90)
+                run=subprocess.run(
+                    invocation,
+                    cwd=repo,
+                    env={
+                        **os.environ,
+                        'PYTHONPATH':str(repo/'src'),
+                        'PYTHONIOENCODING':'utf-8',
+                        'SOLO_EMPIRE_ROOT':str(ROOT),
+                    },
+                    capture_output=True,
+                    text=True,
+                    encoding='utf-8',
+                    timeout=90,
+                )
             except (OSError, subprocess.TimeoutExpired):
                 result['sources'].append({'product':product['id'],'source_id':source_id,'status':'unavailable'})
                 continue
