@@ -206,12 +206,17 @@ def require_permission(product: str) -> None:
         raise ValueError("source_permission_required")
 
 
+def _is_windows() -> bool:
+    """Host predicate kept separate so tests can simulate Windows safely."""
+    return os.name == "nt"
+
+
 def manage(action: str, lake: Path, *, approved: bool = False) -> dict[str, Any]:
     if action not in {"status", "install", "remove"}:
         raise ValueError("unsupported_scheduler_action")
     if action != "status" and not approved:
         raise ValueError("host_approval_required")
-    if os.name != "nt":
+    if not _is_windows():
         raise ValueError("windows_host_required")
     lake = lake.resolve()
     if action == "install":
