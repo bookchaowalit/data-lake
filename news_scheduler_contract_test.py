@@ -9,6 +9,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from scheduler_contract_utils import require_bash
+
 
 ROOT = Path(__file__).resolve().parents[3]
 SETUP_CRON = (
@@ -44,7 +46,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
             env = os.environ.copy()
             env["SOLO_EMPIRE_DATA_LAKE_URI"] = lake
             completed = subprocess.run(
-                ["bash", str(SETUP_CRON), "plan"],
+                [require_bash(), SETUP_CRON.as_posix(), "plan"],
                 cwd=ROOT,
                 env=env,
                 check=True,
@@ -61,7 +63,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
         env = os.environ.copy()
         env.pop("SOLO_EMPIRE_DATA_LAKE_URI", None)
         completed = subprocess.run(
-            ["bash", str(SETUP_CRON), "install"],
+            [require_bash(), SETUP_CRON.as_posix(), "install"],
             cwd=ROOT,
             env=env,
             capture_output=True,

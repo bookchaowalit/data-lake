@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+from scheduler_contract_utils import require_bash
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -43,7 +46,7 @@ class JobsSchedulerContractTests(unittest.TestCase):
         env["SOLO_EMPIRE_DATA_LAKE_URI"] = "/tmp/jobs-lake-plan"
         env.pop("SOLO_EMPIRE_JOB_SOURCE_COLLECTION_APPROVED", None)
         completed = subprocess.run(
-            ["bash", str(SETUP), "plan"],
+            [require_bash(), SETUP.as_posix(), "plan"],
             cwd=ROOT,
             env=env,
             check=True,
@@ -62,7 +65,7 @@ class JobsSchedulerContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="jobs-cron-test-") as home:
             env["HOME"] = home
             completed = subprocess.run(
-                ["bash", str(SETUP), "install"],
+                [require_bash(), SETUP.as_posix(), "install"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -80,7 +83,7 @@ class JobsSchedulerContractTests(unittest.TestCase):
             env["HOME"] = home
             env["SOLO_EMPIRE_DATA_LAKE_URI"] = lake
             completed = subprocess.run(
-                ["bash", str(SETUP), "install"],
+                [require_bash(), SETUP.as_posix(), "install"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -91,7 +94,7 @@ class JobsSchedulerContractTests(unittest.TestCase):
 
     def test_runner_help_is_local(self) -> None:
         completed = subprocess.run(
-            [str(ROOT / ".venv/bin/python"), str(RUNNER), "--help"],
+            [sys.executable, str(RUNNER), "--help"],
             cwd=ROOT,
             check=True,
             capture_output=True,

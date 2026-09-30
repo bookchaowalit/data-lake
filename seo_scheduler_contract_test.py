@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+from scheduler_contract_utils import require_bash
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -40,7 +43,7 @@ class SeoSchedulerContractTests(unittest.TestCase):
         env = os.environ.copy()
         env["SOLO_EMPIRE_DATA_LAKE_URI"] = "/tmp/seo-lake-plan"
         completed = subprocess.run(
-            ["bash", str(SETUP), "plan"],
+            [require_bash(), SETUP.as_posix(), "plan"],
             cwd=ROOT,
             env=env,
             check=True,
@@ -58,7 +61,7 @@ class SeoSchedulerContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="seo-cron-test-") as home:
             env["HOME"] = home
             completed = subprocess.run(
-                ["bash", str(SETUP), "install"],
+                [require_bash(), SETUP.as_posix(), "install"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -69,7 +72,7 @@ class SeoSchedulerContractTests(unittest.TestCase):
 
     def test_runner_help_is_local(self) -> None:
         completed = subprocess.run(
-            [str(ROOT / ".venv/bin/python"), str(RUNNER), "--help"],
+            [sys.executable, str(RUNNER), "--help"],
             cwd=ROOT,
             check=True,
             capture_output=True,

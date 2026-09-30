@@ -197,6 +197,79 @@ class SilverTests(unittest.TestCase):
             self.assertTrue(all(row["quality_status"] == "valid" for row in rows))
             self.assertEqual(result["quality"]["required_fields"], ["source_record_id", "coin_id", "currency", "price"])
 
+    def _ohlcv_record(self, open_ms, *, high="101", low="99"):
+        return {
+            "id": f"binance_futures:BTCUSDT:1h:{open_ms}",
+            "venue": "binance_futures",
+            "symbol": "BTCUSDT",
+            "interval": "1h",
+            "open_time_ms": open_ms,
+            "close_time_ms": open_ms + 3_599_999,
+            "open": "100",
+            "high": high,
+            "low": low,
+            "close": "100.5",
+            "volume": "12.5",
+            "quote_volume": "1250",
+            "trades": 0,
+            "event_time": "2026-08-08T00:00:00Z",
+        }
+
+    def _ohlcv_contract(self):
+        return SilverProductContract(
+            source="book-crypto-data",
+            domain="market",
+            bronze_dataset="crypto_ohlcv",
+            silver_dataset="crypto_ohlcv",
+            product_schema_version="crypto-ohlcv.silver.v1",
+            bronze_product_schema_version="crypto.v1",
+            transform_version="crypto-ohlcv-silver.v1",
+            normalizer="crypto_ohlcv",
+            privacy_class="public",
+            required_fields=("source_record_id", "symbol", "interval", "open_time_ms"),
+        )
+
+    def test_crypto_ohlcv_bars_are_deduplicated_and_typed(self):
+        with tempfile.TemporaryDirectory() as root:
+            for _ in range(2):  # the same closed bars captured twice
+                ingest_payload(
+                    b"[[1786147200000]]",
+                    [self._ohlcv_record(1786147200000), self._ohlcv_record(1786150800000)],
+                    source="book-crypto-data",
+                    domain="market",
+                    dataset="crypto_ohlcv",
+                    data_lake_uri=root,
+                    input_format="json",
+                    event_time_field="event_time",
+                    privacy_class="public",
+                )
+            result = transform_bronze_to_silver(self._ohlcv_contract(), data_lake_uri=root)
+            rows = query_parquet(
+                str(Path(root) / result["silver_key"]),
+                "SELECT symbol, open_time_ms, high, trades, quality_status FROM lake_table ORDER BY open_time_ms",
+            )
+            self.assertEqual(result["record_count"], 2)
+            self.assertEqual(rows[0]["open_time_ms"], "1786147200000")
+            self.assertEqual(rows[0]["trades"], "0")
+            self.assertTrue(all(row["quality_status"] == "valid" for row in rows))
+
+    def test_crypto_ohlcv_rejects_inconsistent_high_low(self):
+        with tempfile.TemporaryDirectory() as root:
+            ingest_payload(
+                b"[[1786147200000]]",
+                [self._ohlcv_record(1786147200000, high="99.9")],
+                source="book-crypto-data",
+                domain="market",
+                dataset="crypto_ohlcv",
+                data_lake_uri=root,
+                input_format="json",
+                event_time_field="event_time",
+                privacy_class="public",
+            )
+            with self.assertRaises(SilverQualityError):
+                transform_bronze_to_silver(self._ohlcv_contract(), data_lake_uri=root)
+            self.assertFalse((Path(root) / "silver").exists())
+
     def test_stock_contract_reuses_shared_writer_with_market_quality_rules(self):
         with tempfile.TemporaryDirectory() as root:
             ingest_payload(

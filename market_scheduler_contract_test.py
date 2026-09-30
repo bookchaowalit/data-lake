@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+
+from scheduler_contract_utils import require_bash
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -42,7 +45,7 @@ class MarketSchedulerContractTests(unittest.TestCase):
         env = os.environ.copy()
         env["SOLO_EMPIRE_DATA_LAKE_URI"] = "/tmp/market-lake-plan"
         completed = subprocess.run(
-            ["bash", str(SETUP), "plan"],
+            [require_bash(), SETUP.as_posix(), "plan"],
             cwd=ROOT,
             env=env,
             check=True,
@@ -65,7 +68,7 @@ class MarketSchedulerContractTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="market-cron-test-") as home:
             env["HOME"] = home
             completed = subprocess.run(
-                ["bash", str(SETUP), "install"],
+                [require_bash(), SETUP.as_posix(), "install"],
                 cwd=ROOT,
                 env=env,
                 capture_output=True,
@@ -76,7 +79,7 @@ class MarketSchedulerContractTests(unittest.TestCase):
 
     def test_runner_help_is_local_and_does_not_contact_providers(self) -> None:
         completed = subprocess.run(
-            [str(ROOT / ".venv/bin/python"), str(RUNNER), "--help"],
+            [sys.executable, str(RUNNER), "--help"],
             cwd=ROOT,
             check=True,
             capture_output=True,
@@ -87,7 +90,7 @@ class MarketSchedulerContractTests(unittest.TestCase):
 
     def test_runner_rejects_unknown_product_without_traceback(self) -> None:
         completed = subprocess.run(
-            [str(ROOT / ".venv/bin/python"), str(RUNNER), "--product", "missing", "--json"],
+            [sys.executable, str(RUNNER), "--product", "missing", "--json"],
             cwd=ROOT,
             check=False,
             capture_output=True,

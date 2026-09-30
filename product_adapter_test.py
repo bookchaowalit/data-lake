@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -31,7 +32,13 @@ from data_lake.product_store import (  # noqa: E402
 )
 
 
-@unittest.skipUnless(
+def _skip_unless_runtime(available: bool, reason: str):
+    if not available and os.environ.get("SOLO_EMPIRE_CI") == "1":
+        raise RuntimeError(f"{reason}; SOLO_EMPIRE_CI=1 requires the data-lake runtime")
+    return unittest.skipUnless(available, reason)
+
+
+@_skip_unless_runtime(
     __import__("importlib.util").util.find_spec("pyarrow") is not None,
     "pyarrow required",
 )

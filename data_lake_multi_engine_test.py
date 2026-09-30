@@ -3,11 +3,14 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
@@ -36,8 +39,31 @@ def _deps_ok() -> bool:
     return True
 
 
-@unittest.skipUnless(_deps_ok(), "duckdb/pyarrow required")
+def _skip_unless_runtime(available: bool, reason: str):
+    if not available and os.environ.get("SOLO_EMPIRE_CI") == "1":
+        raise RuntimeError(f"{reason}; SOLO_EMPIRE_CI=1 requires the data-lake runtime")
+    return unittest.skipUnless(available, reason)
+
+
+def _requires_chdb():
+    return _skip_unless_runtime(
+        importlib.util.find_spec("chdb") is not None,
+        "Embedded ClickHouse lab requires chdb; no Windows binary distribution",
+    )
+
+
+@_skip_unless_runtime(_deps_ok(), "duckdb/pyarrow required")
 class MultiEngineLabTests(unittest.TestCase):
+    def test_optional_clickhouse_gate_does_not_hide_missing_ci_runtime(self):
+        with patch("importlib.util.find_spec", return_value=None):
+            with patch.dict(os.environ, {"SOLO_EMPIRE_CI": "1"}):
+                with self.assertRaisesRegex(RuntimeError, "SOLO_EMPIRE_CI=1"):
+                    _requires_chdb()
+            with patch.dict(os.environ, {"SOLO_EMPIRE_CI": "0"}):
+                skipped = _requires_chdb()(lambda: None)
+                self.assertTrue(skipped.__unittest_skip__)
+                self.assertIn("chdb", skipped.__unittest_skip_why__)
+
     def test_roles_and_source_of_truth_flags(self):
         duck = get_engine("duckdb")
         self.assertEqual(duck.role, EngineRole.PRODUCTION)
@@ -58,6 +84,7 @@ class MultiEngineLabTests(unittest.TestCase):
             # No CSV as lake input.
             self.assertEqual(list(lake.rglob("*.csv")), [])
 
+    @_requires_chdb()
     def test_duckdb_and_clickhouse_equivalence(self):
         with tempfile.TemporaryDirectory() as tmp:
             lake = Path(tmp) / "lake"
@@ -72,6 +99,7 @@ class MultiEngineLabTests(unittest.TestCase):
                 self.assertIn("duckdb", query["engines"])
                 self.assertIn("clickhouse", query["engines"])
 
+    @_requires_chdb()
     def test_three_engines_equivalence_when_postgres_available(self):
         with optional_env_postgres() as dsn:
             if not dsn:
@@ -95,6 +123,7 @@ class MultiEngineLabTests(unittest.TestCase):
                     self.assertTrue(query["equivalent"], msg=query)
                     self.assertEqual(set(query["engines"]), {"clickhouse", "duckdb", "postgres"})
 
+    @_requires_chdb()
     def test_benchmark_reproducible_shape(self):
         with tempfile.TemporaryDirectory() as tmp:
             lake = Path(tmp) / "lake"
@@ -136,23 +165,29 @@ class MultiEngineLabTests(unittest.TestCase):
             self.assertEqual(btc_usd[0]["price"], 51000.0)
 
     def test_lineage_includes_raw_object_key(self):
+        self._assert_lineage("duckdb")
+
+    @_requires_chdb()
+    def test_clickhouse_lineage_includes_raw_object_key(self):
+        self._assert_lineage("clickhouse")
+
+    def _assert_lineage(self, name: str):
         with tempfile.TemporaryDirectory() as tmp:
             lake = Path(tmp) / "lake"
             seed_demo_lake(lake)
             parts = discover_bronze_parquet(lake)
-            for name in ("duckdb", "clickhouse"):
-                engine = get_engine(name)
-                engine.open()
-                try:
-                    engine.load_bronze(parts)
-                    lin = engine.lineage()
-                finally:
-                    engine.close()
-                self.assertGreater(len(lin.rows), 0)
-                for row in lin.rows:
-                    self.assertTrue(str(row["raw_object_key"]).startswith("landing/"))
-                    self.assertTrue(row["ingest_run_id"])
-                    self.assertTrue(row["event_id"])
+            engine = get_engine(name)
+            engine.open()
+            try:
+                engine.load_bronze(parts)
+                lin = engine.lineage()
+            finally:
+                engine.close()
+            self.assertGreater(len(lin.rows), 0)
+            for row in lin.rows:
+                self.assertTrue(str(row["raw_object_key"]).startswith("landing/"))
+                self.assertTrue(row["ingest_run_id"])
+                self.assertTrue(row["event_id"])
 
     def test_canonicalize_stable(self):
         a = canonicalize_row({"price": 1.0000004, "coin_id": "bitcoin", "event_count": 2})

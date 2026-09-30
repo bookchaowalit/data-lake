@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import sys
 import tempfile
 import unittest
@@ -43,7 +44,13 @@ class FakeConsumer:
         self.commits.append(offsets)
 
 
-@unittest.skipUnless(HAS_STREAM_RUNTIME, "install requirements-data-lake.txt for Avro/Parquet runtime")
+def _skip_unless_runtime(available: bool, reason: str):
+    if not available and os.environ.get("SOLO_EMPIRE_CI") == "1":
+        raise RuntimeError(f"{reason}; SOLO_EMPIRE_CI=1 requires the data-lake runtime")
+    return unittest.skipUnless(available, reason)
+
+
+@_skip_unless_runtime(HAS_STREAM_RUNTIME, "install requirements-data-lake.txt for Avro/Parquet runtime")
 class StreamLakeContractTests(unittest.TestCase):
     def test_sink_is_durable_before_commit_and_retry_is_idempotent(self):
         messages = [

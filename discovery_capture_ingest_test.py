@@ -16,7 +16,6 @@ sys.path.insert(0, str(ROOT / "infra/scripts"))
 
 from data_lake.ingest_discovery_captures import (  # noqa: E402
     CAPTURES,
-    SOURCE_ROOT,
     _capture_lookup,
     map_records,
     normalize_timestamp,
@@ -69,7 +68,7 @@ class DiscoveryCaptureTests(unittest.TestCase):
         self.assertTrue(mapped[0]["attribution_required"])
 
     def test_all_approved_captures_validate_without_network(self) -> None:
-        with tempfile.TemporaryDirectory(dir=ROOT / "data") as temp_dir:
+        with tempfile.TemporaryDirectory() as temp_dir:
             capture_root = Path(temp_dir)
             self._write_capture_fixtures(capture_root)
             result = subprocess.run(
@@ -93,9 +92,10 @@ class DiscoveryCaptureTests(unittest.TestCase):
         self.assertEqual(payload["skipped"], [])
         self.assertEqual(len(payload["results"]), 8)
         self.assertTrue(all(row["record_count"] > 0 for row in payload["results"]))
-        self.assertTrue(SOURCE_ROOT.is_dir())
 
     def test_missing_capture_root_fails_closed(self) -> None:
+        # Keep the temporary path repository-relative because the CLI's
+        # redacted skipped-path report deliberately uses ROOT-relative paths.
         with tempfile.TemporaryDirectory(dir=ROOT / "data") as temp_dir:
             result = subprocess.run(
                 [
