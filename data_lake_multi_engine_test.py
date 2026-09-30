@@ -17,8 +17,11 @@ sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake.engines.base import (  # noqa: E402
     EngineRole,
+    as_float,
+    as_int,
     canonicalize_row,
     get_engine,
+    normalize_latest_rows,
 )
 from data_lake.engines.lab_runtime import optional_env_postgres  # noqa: E402
 from data_lake.engines.suite import (  # noqa: E402
@@ -50,6 +53,34 @@ def _requires_chdb():
         importlib.util.find_spec("chdb") is not None,
         "Embedded ClickHouse lab requires chdb; no Windows binary distribution",
     )
+
+
+class NumericNormalizationTests(unittest.TestCase):
+    """Pure helpers; no engine runtime needed."""
+
+    def test_non_finite_payload_numbers_become_none(self):
+        # json.loads accepts NaN/Infinity, so scraped payloads can carry them.
+        for raw in ("NaN", "nan", "Infinity", "-inf", "1e400", float("nan"), float("inf"), True):
+            with self.subTest(raw=raw):
+                self.assertIsNone(as_float(raw))
+        self.assertEqual(as_float("42.5"), 42.5)
+        self.assertEqual(as_float(3), 3.0)
+
+    def test_as_int_does_not_crash_on_overflowing_values(self):
+        for raw in ("inf", "1e400", float("inf"), float("nan"), "NaN"):
+            with self.subTest(raw=raw):
+                self.assertEqual(as_int(raw), 0)
+        self.assertEqual(as_int("7"), 7)
+        self.assertEqual(as_int("7.9"), 7)
+
+    def test_normalize_and_canonicalize_treat_nan_as_missing(self):
+        rows = normalize_latest_rows(
+            [{"source_record_id": "a", "payload_json": '{"coin_id": "btc", "price": NaN}'}]
+        )
+        self.assertIsNone(rows[0]["price"])
+        left = canonicalize_row({"price": float("nan"), "ratio": float("nan"), "event_count": "inf"})
+        right = canonicalize_row({"price": None, "ratio": None, "event_count": 0})
+        self.assertEqual(left, right)
 
 
 @_skip_unless_runtime(_deps_ok(), "duckdb/pyarrow required")
