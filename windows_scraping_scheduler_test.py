@@ -165,7 +165,7 @@ class WindowsSchedulerTests(unittest.TestCase):
             else:
                 payload["tasks"][0]["job"] = ["news"]
             completed = subprocess.CompletedProcess([], 0, json.dumps(payload), "")
-            with self.subTest(change=change), patch.object(scheduler.os, "name", "nt"):
+            with self.subTest(change=change), patch.object(scheduler, "_is_windows", return_value=True):
                 with patch.object(scheduler.subprocess, "run", return_value=completed):
                     with self.assertRaisesRegex(ValueError, "invalid_windows_scheduler_result"):
                         scheduler.manage("status", scheduler.DEFAULT_LAKE)
