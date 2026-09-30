@@ -8,9 +8,11 @@ model-paths: ["models"]
 clean-targets: ["target", "dbt_packages"]
 
 vars:
-  # Repo-root-relative path to the Bronze Parquet root. Overridable so CI
-  # or another checkout layout can point elsewhere without editing SQL.
-  bronze_root: "../../data/lake-local/bronze"
+  # The lake URI may be a local path or a file:// URI. Both roots are
+  # overridable so CI or another checkout layout can point elsewhere without
+  # editing SQL.
+  bronze_root: "{{ env_var('SOLO_EMPIRE_DATA_LAKE_URI', '../../data/lake') }}/bronze"
+  bronze_manifest_root: "{{ env_var('SOLO_EMPIRE_DATA_LAKE_URI', '../../data/lake') }}/control/manifests"
 
 models:
   solo_empire_lake:

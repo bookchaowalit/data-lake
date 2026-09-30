@@ -15,12 +15,39 @@ models:
       - name: received_at
         tests:
           - not_null
+      - name: event_time
+        tests:
+          - not_null
+      - name: source_system
+        tests:
+          - not_null
+      - name: domain
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["communications"]
+      - name: dataset
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["emails"]
+      - name: schema_version
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["1"]
       - name: privacy_class
         tests:
           - not_null
           - accepted_values:
               arguments:
-                values: ["private", "internal", "public"]
+                values: ["private", "internal", "public", "restricted"]
+      - name: retention_class
+        tests:
+          - not_null
       - name: message_id
+        tests:
+          - not_null
+      - name: label_count
         tests:
           - not_null

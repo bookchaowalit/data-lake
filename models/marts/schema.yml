@@ -13,3 +13,15 @@ models:
       - name: email_count
         tests:
           - not_null
+      - name: with_attachment_count
+        tests:
+          - not_null
+      - name: important_count
+        tests:
+          - not_null
+      - name: unread_count
+        tests:
+          - not_null
+      - name: distinct_thread_count
+        tests:
+          - not_null

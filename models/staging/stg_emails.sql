@@ -1,17 +1,35 @@
 -- Staging model: parses the generic Bronze envelope's payload_json into
--- typed columns for the communications.emails dataset. One row per Bronze
--- event_id (Bronze is already deduplicated append-only, but dedupe here
--- too so this model is safe to point at any Bronze glob).
+-- typed columns for the communications.emails dataset. Only manifest-committed
+-- Bronze parts are eligible; the bounded partition glob is an input locator,
+-- not the commit protocol.
 --
 -- privacy_class stays a passthrough column rather than being dropped: any
 -- consumer of this model (a Gold-level mart, a dashboard query) can filter
 -- on it, but this model does not itself decide what's safe to expose.
 
-with source as (
+with committed_manifests as (
+    select distinct
+        cast(bronze.key as varchar) as bronze_key
+    from read_json_auto(
+        '{{ var("bronze_manifest_root") }}/source=*/batch_id=*.json',
+        union_by_name = true
+    )
+    where domain = 'communications'
+      and dataset = 'emails'
+      and cast(schema_version as varchar) = '1'
+),
+
+source as (
     select *
     from read_parquet(
-        '{{ var("bronze_root") }}/domain=communications/dataset=emails/**/*.parquet'
-    )
+        '{{ var("bronze_root") }}/domain=communications/dataset=emails/schema_version=*/ingest_date=*/source=*/part-*.parquet',
+        filename = true
+    ) as parts
+    inner join committed_manifests as manifests
+        on ends_with(
+            replace(parts.filename, '\\', '/'),
+            manifests.bronze_key
+        )
 ),
 
 deduped as (
