@@ -7,6 +7,7 @@ optional projection engines. No engine owns the data; Bronze Parquet does.
 from __future__ import annotations
 
 import json
+import math
 from abc import ABC, abstractmethod
 from dataclasses import asdict, dataclass, field
 from enum import Enum
@@ -108,24 +109,24 @@ def parse_payload(payload_json: Any) -> dict[str, Any]:
 
 
 def as_float(value: Any) -> float | None:
-    if value is None or value == "":
+    """Parse a numeric payload value; NaN/Infinity (valid in Python's JSON) become None."""
+    if value is None or value == "" or isinstance(value, bool):
         return None
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
         return None
+    return number if math.isfinite(number) else None
 
 
 def as_int(value: Any) -> int:
-    if value is None or value == "":
+    if value is None or value == "" or isinstance(value, bool):
         return 0
     try:
         return int(value)
-    except (TypeError, ValueError):
-        try:
-            return int(float(value))
-        except (TypeError, ValueError):
-            return 0
+    except (TypeError, ValueError, OverflowError):
+        number = as_float(value)
+        return int(number) if number is not None else 0
 
 
 def canonicalize_row(row: dict[str, Any]) -> dict[str, Any]:
@@ -153,7 +154,9 @@ def canonicalize_row(row: dict[str, Any]) -> dict[str, Any]:
         elif isinstance(value, int):
             out[key] = value
         elif isinstance(value, float):
-            out[key] = round(value, 6)
+            # NaN never equals itself, so it would make equivalent engine
+            # results compare unequal; represent non-finite values as None.
+            out[key] = round(value, 6) if math.isfinite(value) else None
         else:
             out[key] = str(value)
     return out
