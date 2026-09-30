@@ -190,8 +190,8 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "ai_tools.v1",
         "ai_tools",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-ai/book-ai-tools-data/data/exported/ai_tools.csv",
-        ("tool_id",),
-        "captured_at",
+        ("source", "url"),
+        "observed_at",
     ),
     CaptureSpec(
         "ai_tools",
@@ -200,8 +200,8 @@ CAPTURES: tuple[CaptureSpec, ...] = (
         "ai_tools.v1",
         "ai_tools_history",
         "projects/product/engineering/book-dev/github/bookchaowalit/book-ai/book-ai-tools-data/data/exported/ai_tools_history.csv",
-        ("tool_id",),
-        "captured_at",
+        ("source", "url", "observed_at"),
+        "observed_at",
         True,
     ),
     CaptureSpec(
@@ -581,6 +581,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--product", action="append", choices=sorted({spec.product for spec in CAPTURES}))
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--validate-only", action="store_true", help="Validate captures without writing lake or lineage artifacts")
+    parser.add_argument("--dry-run", action="store_true", help="Validate without writes; report missing captures without failing")
     parser.add_argument("--update-lineage", action="store_true", help="Update product-local lineage projections after reconciliation")
     return parser
 
@@ -594,7 +595,8 @@ def main(argv: list[str] | None = None) -> int:
     # flight collection remain held behind their source-owner gates.
     approved = {"crypto", "stocks", "fx", "defi", "seo", "news"}
     selected = set(args.product or approved)
-    if not args.validate_only and selected - approved:
+    validate_only = args.validate_only or args.dry_run
+    if not validate_only and selected - approved:
         print("Replay held: selected sources require source permission and consumer mapping review.", file=sys.stderr)
         return 1
     results: list[dict[str, Any]] = []
@@ -608,22 +610,24 @@ def main(argv: list[str] | None = None) -> int:
             skipped.append({"product": spec.product, "dataset": spec.dataset, "path": spec.path})
             continue
         try:
-            results.append(ingest_capture(spec, lake_uri=args.lake_uri, validate_only=args.validate_only, update_lineage=args.update_lineage))
+            results.append(ingest_capture(spec, lake_uri=args.lake_uri, validate_only=validate_only, update_lineage=args.update_lineage))
         except (OSError, ValueError, RuntimeError) as exc:
             errors.append({"product": spec.product, "dataset": spec.dataset, "error": type(exc).__name__})
-    summary = {"lake_uri": args.lake_uri, "validate_only": args.validate_only, "results": results, "skipped": skipped, "errors": errors}
+    summary = {"lake_uri": args.lake_uri, "validate_only": validate_only, "dry_run": args.dry_run, "results": results, "skipped": skipped, "errors": errors}
     if args.as_json:
         print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
     else:
-        print(f"Scraping capture replay: {len(results)} dataset(s) {'validated' if args.validate_only else 'committed'}")
+        print(f"Scraping capture replay: {len(results)} dataset(s) {'validated' if validate_only else 'committed'}")
         for item in results:
-            state = "validated" if args.validate_only else "existing" if item["manifest_existed"] else "new"
+            state = "validated" if validate_only else "existing" if item["manifest_existed"] else "new"
             print(f"  {item['product']}/{item['dataset']}: {item['record_count']} record(s), {state}")
         for item in skipped:
             print(f"  skipped missing: {item['product']}/{item['dataset']}")
         for item in errors:
             print(f"  failed: {item['product']}/{item['dataset']} ({item['error']}); immutable prior mappings require an isolated replay/reconciliation, not overwrite")
-    return 1 if errors or skipped or not results else 0
+    # A dry-run is a non-writing readiness plan: missing local captures are
+    # reported in the JSON/text result but do not make the plan command fail.
+    return 1 if errors or (not args.dry_run and (skipped or not results)) else 0
 
 
 if __name__ == "__main__":

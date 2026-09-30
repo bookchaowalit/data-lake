@@ -11,14 +11,20 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import socket
 import subprocess
+import sys
+import tempfile
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 import yaml
 
+SCRIPTS = Path(__file__).resolve().parents[1]
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
 
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REQUIREMENTS = ROOT / "systems" / "ai-data" / "scraping-data-coverage.yaml"
@@ -260,17 +266,77 @@ def _read_crontab() -> tuple[str, str]:
     return "", "unavailable"
 
 
+def _read_windows_schedule(root: Path) -> tuple[set[str], str]:
+    if os.name != "nt" or root != ROOT:
+        return set(), "not-probed"
+    from data_lake.windows_scraping_scheduler import DEFAULT_LAKE, JOBS, manage
+
+    try:
+        result = manage("status", DEFAULT_LAKE)
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return set(), "unavailable"
+    rows = result["tasks"]
+    expected = set(JOBS)
+    if (
+        len(rows) != len(expected)
+        or any(not isinstance(row, dict) for row in rows)
+        or any(not isinstance(row.get("job"), str) for row in rows)
+        or {row.get("job") for row in rows} != expected
+        or any(
+            row.get("task_name") != "SoloEmpire-Scraping-" + str(row.get("job"))
+            or any(type(row.get(key)) is not bool for key in ("installed", "enabled", "definition_matches"))
+            for row in rows
+        )
+    ):
+        return set(), "invalid"
+    present = {
+        row["job"] for row in rows
+        if row["installed"] and row["enabled"] and row["definition_matches"]
+    }
+    return present, "available"
+
+
 def _contract_evidence(root: Path, delivery: dict[str, Any]) -> dict[str, Any]:
     contract_path = delivery.get("contract_path")
     expected = delivery.get("schema_version")
     if not contract_path:
-        return {"status": "missing", "path": None, "schema_version": expected}
+        return {"status": "missing", "present": False, "path": None, "schema_version": expected}
     path = root / str(contract_path)
     if not path.is_file():
-        return {"status": "missing", "path": str(contract_path), "schema_version": expected}
-    text = path.read_text(encoding="utf-8")
-    status = "present" if not expected or str(expected) in text else "mismatch"
-    return {"status": status, "path": str(contract_path), "schema_version": expected}
+        return {"status": "missing", "present": False, "path": str(contract_path), "schema_version": expected}
+    evidence = {"status": "invalid", "present": True, "path": str(contract_path), "schema_version": expected}
+    try:
+        contract = yaml.safe_load(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, yaml.YAMLError):
+        return evidence
+    if not isinstance(contract, dict):
+        return evidence
+    version = contract.get("schema_version")
+    if version is not None and not isinstance(version, str):
+        return evidence
+    versions = {version}
+    products = contract.get("products", [])
+    if isinstance(products, list):
+        versions.update(
+            product["schema_version"]
+            for product in products
+            if isinstance(product, dict) and isinstance(product.get("schema_version"), str)
+        )
+    lifecycle = contract.get("status", "active")
+    if not isinstance(lifecycle, str):
+        return evidence
+    if expected and expected not in versions:
+        evidence["status"] = "mismatch"
+    elif lifecycle not in {"active", "active-local", "approved", "frozen"}:
+        evidence["status"] = lifecycle
+    elif (
+        contract.get("not_yet_approved_for_collection", False) is not False
+        or contract.get("collection_approval", "approved") != "approved"
+    ):
+        evidence["status"] = "approval_pending"
+    else:
+        evidence["status"] = "present"
+    return evidence
 
 
 def _probe_local_port(port: Any, enabled: bool) -> str:
@@ -327,9 +393,12 @@ def build_report(
         for row in _source_rows(source_registry)
         if isinstance(row.get("job"), str)
     }
+    windows_jobs: set[str] = set()
+    windows_status = "not-probed"
     if crontab_text is None:
         crontab_text, detected_status = _read_crontab()
         crontab_status = crontab_status or detected_status
+        windows_jobs, windows_status = _read_windows_schedule(root)
     else:
         crontab_status = crontab_status or "provided"
 
@@ -345,7 +414,11 @@ def build_report(
         priority = str(product.get("priority", "P2"))
         cron_tags = [str(tag) for tag in product.get("cron_tags", []) if isinstance(tag, str)]
         cron_matches = [tag for tag in cron_tags if tag in (crontab_text or "")]
-        cron_state = "present" if cron_matches else ("not_required" if not cron_tags else "missing")
+        windows_job = "monitor" if product_id == "collection-operations" else product_id
+        windows_task = (
+            "SoloEmpire-Scraping-" + windows_job if windows_job in windows_jobs else None
+        )
+        cron_state = "present" if cron_matches or windows_task else ("not_required" if not cron_tags else "missing")
         source_results: list[dict[str, Any]] = []
 
         for source_spec in product.get("sources", []):
@@ -470,6 +543,7 @@ def build_report(
             "schedules": sorted({str(row["schedule"]) for row in source_results if row["schedule"]}),
             "source_status": collection_status,
             "cron_status": cron_state,
+            "windows_task": windows_task,
             "capture_status": capture_status,
             "latest_capture_at": latest_capture_at,
             "lake_status": lake_status,
@@ -526,6 +600,7 @@ def build_report(
         ),
         "fresh_capture": sum(1 for row in required_products if row["capture_status"] == "fresh"),
         "lake_fresh": sum(1 for row in required_products if row["lake_status"] == "fresh"),
+        "contract_present": sum(1 for row in required_products if row["contract"]["present"]),
         "contract_ready": sum(1 for row in required_products if row["contract"]["status"] == "present"),
         "end_to_end_ready": sum(1 for row in required_products if row["end_to_end_ready"]),
     }
@@ -538,6 +613,7 @@ def build_report(
         "schedule_ready_pct": _percent(metrics["schedule_ready"], total_required),
         "fresh_capture_pct": _percent(metrics["fresh_capture"], total_required),
         "lake_fresh_pct": _percent(metrics["lake_fresh"], total_required),
+        "contract_present_pct": _percent(metrics["contract_present"], total_required),
         "contract_ready_pct": _percent(metrics["contract_ready"], total_required),
         "end_to_end_ready_pct": _percent(metrics["end_to_end_ready"], total_required),
         "source_registry_jobs": len(registry_jobs),
@@ -564,6 +640,7 @@ def build_report(
             "credentials": "not-read",
             "raw_records": "not-read",
             "crontab": crontab_status,
+            "windows_scheduler": windows_status,
         },
         "validation_errors": validation_errors,
         "summary": summary,
@@ -604,6 +681,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         ("Schedule ready", "schedule_ready", "schedule_ready_pct"),
         ("Capture fresh", "fresh_capture", "fresh_capture_pct"),
         ("Lake fresh", "lake_fresh", "lake_fresh_pct"),
+        ("Contract present", "contract_present", "contract_present_pct"),
         ("Contract ready", "contract_ready", "contract_ready_pct"),
         ("End-to-end ready", "end_to_end_ready", "end_to_end_ready_pct"),
     ]
@@ -728,6 +806,7 @@ def render_text(report: dict[str, Any]) -> str:
             f"Schedule ready: {summary['schedule_ready']}/{summary['required_products']} ({summary['schedule_ready_pct']:.1f}%)",
             f"Fresh capture: {summary['fresh_capture']}/{summary['required_products']} ({summary['fresh_capture_pct']:.1f}%)",
             f"Fresh lake: {summary['lake_fresh']}/{summary['required_products']} ({summary['lake_fresh_pct']:.1f}%)",
+            f"Contract present: {summary['contract_present']}/{summary['required_products']} ({summary['contract_present_pct']:.1f}%)",
             f"Contract ready: {summary['contract_ready']}/{summary['required_products']} ({summary['contract_ready_pct']:.1f}%)",
             f"End-to-end ready: {summary['end_to_end_ready']}/{summary['required_products']} ({summary['end_to_end_ready_pct']:.1f}%)",
             f"Gate gaps: P0={summary['p0_gaps']} P1={summary['p1_gaps']} P2={summary['p2_gaps']}",
@@ -736,9 +815,19 @@ def render_text(report: dict[str, Any]) -> str:
     ) + "\n"
 
 
-def _write(path: Path, content: str) -> None:
+def write_report(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8")
+    temporary: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=path.parent, suffix=".tmp", delete=False,
+        ) as handle:
+            temporary = Path(handle.name)
+            handle.write(content)
+        temporary.replace(path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -747,7 +836,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--requirements", type=Path, default=DEFAULT_REQUIREMENTS)
     parser.add_argument("--source-registry", type=Path)
     parser.add_argument("--now", help="ISO timestamp override for deterministic evidence")
-    parser.add_argument("--crontab-file", type=Path, help="Use a fixture instead of current user crontab")
+    parser.add_argument(
+        "--crontab-file",
+        type=Path,
+        help="Read an exported crontab from this path instead of the local host crontab",
+    )
     parser.add_argument("--probe-api", action="store_true", help="Probe loopback ports only; no HTTP or remote call")
     parser.add_argument("--json", action="store_true", help="Print the full JSON report")
     parser.add_argument("--json-output", type=Path)
@@ -757,18 +850,18 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
-    args = build_parser().parse_args()
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     root = args.root.resolve()
     requirements = _relative_input(root, args.requirements).resolve()
     source_registry = _relative_input(root, args.source_registry).resolve() if args.source_registry else None
     crontab_text = None
     crontab_status = None
-    if args.crontab_file:
-        crontab_path = _relative_input(root, args.crontab_file)
-        crontab_text = crontab_path.read_text(encoding="utf-8")
-        crontab_status = "fixture"
     try:
+        if args.crontab_file:
+            crontab_path = _relative_input(root, args.crontab_file)
+            crontab_text = crontab_path.read_text(encoding="utf-8")
+            crontab_status = "fixture"
         report = build_report(
             root,
             requirements,
@@ -786,10 +879,10 @@ def main() -> int:
     markdown = render_markdown(report)
     if args.json_output:
         output = _relative_input(root, args.json_output)
-        _write(output, encoded)
+        write_report(output, encoded)
     if args.markdown_output:
         output = _relative_input(root, args.markdown_output)
-        _write(output, markdown)
+        write_report(output, markdown)
     print(encoded if args.json else render_text(report), end="")
 
     if report["validation_errors"]:

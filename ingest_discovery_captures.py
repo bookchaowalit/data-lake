@@ -340,11 +340,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--source", action="append", choices=sorted({item.source_id for item in CAPTURES}))
     parser.add_argument("--json", action="store_true", dest="as_json")
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument("--dry-run", action="store_true", help="Validate without writes; report missing captures without failing")
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    validate_only = args.validate_only or args.dry_run
     selected = set(args.source or {item.source_id for item in CAPTURES})
     source_root = args.source_root.resolve()
     capture_lookup = _capture_lookup(source_root)
@@ -365,14 +367,15 @@ def main(argv: list[str] | None = None) -> int:
                     lake_uri=args.lake_uri,
                     source_root=source_root,
                     capture_lookup=capture_lookup,
-                    validate_only=args.validate_only,
+                    validate_only=validate_only,
                 )
             )
         except (OSError, ValueError, RuntimeError) as exc:
             errors.append({"source": spec.source_id, "dataset": spec.dataset, "error": type(exc).__name__})
     summary = {
         **_contract(args.lake_uri),
-        "validate_only": args.validate_only,
+        "validate_only": validate_only,
+        "dry_run": args.dry_run,
         "results": results,
         "skipped": skipped,
         "errors": errors,
@@ -380,16 +383,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.as_json:
         print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
     else:
-        state = "validated" if args.validate_only else "committed"
+        state = "validated" if validate_only else "committed"
         print(f"Discovery capture replay: {len(results)} dataset(s) {state}")
         for item in results:
-            status = "validated" if args.validate_only else "existing" if item.get("manifest_existed") else "new"
+            status = "validated" if validate_only else "existing" if item.get("manifest_existed") else "new"
             print(f"  {item['source']}/{item['dataset']}: {item['record_count']} record(s), {status}")
         for item in skipped:
             print(f"  skipped missing: {item['source']}/{item['dataset']}")
         for item in errors:
             print(f"  failed: {item['source']}/{item['dataset']} ({item['error']})")
-    return 1 if errors or skipped or not results else 0
+    # A dry-run is a non-writing readiness plan: missing local captures are
+    # reported in the JSON/text result but do not make the plan command fail.
+    return 1 if errors or (not args.dry_run and (skipped or not results)) else 0
 
 
 if __name__ == "__main__":

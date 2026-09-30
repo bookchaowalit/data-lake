@@ -13,8 +13,6 @@ scheduler after the local cadence evidence is complete.
 from __future__ import annotations
 
 import argparse
-import errno
-import fcntl
 import json
 import os
 import subprocess
@@ -50,6 +48,7 @@ from data_lake.ingest_scraping_captures import (  # noqa: E402
     _records,
     ingest_capture,
 )
+from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
 
 
 NEWS_CAPTURES: tuple[CaptureSpec, ...] = tuple(
@@ -128,28 +127,12 @@ def _latest_observed_at(items: Sequence[dict[str, Any]]) -> datetime | None:
 @contextmanager
 def acquire_lock(path: Path, *, timeout_seconds: float = 0.0) -> Iterator[None]:
     """Acquire an advisory source lock, failing closed after a short wait."""
-    if timeout_seconds < 0:
-        raise ValueError("lock timeout must be non-negative")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle = path.open("a+")
-    deadline = time.monotonic() + timeout_seconds
-    try:
-        while True:
-            try:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except OSError as exc:
-                if exc.errno not in {errno.EACCES, errno.EAGAIN}:
-                    raise
-                if time.monotonic() >= deadline:
-                    raise LockBusyError("lock_busy") from None
-                time.sleep(min(0.25, max(0.01, deadline - time.monotonic())))
+    with _acquire_lock(
+        path,
+        timeout_seconds=timeout_seconds,
+        busy_error=LockBusyError,
+    ):
         yield
-    finally:
-        try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        finally:
-            handle.close()
 
 
 def _run_collector(*, limit: int, timeout_seconds: float) -> None:
@@ -473,6 +456,7 @@ def run_news_cycle(
     retry_backoff_seconds: float = 1.0,
     lock_timeout_seconds: float = 0.0,
     max_age_hours: float = 24.0,
+    dry_run: bool = False,
 ) -> dict[str, Any]:
     """Run capture, validation, ingest, and health as one bounded cycle."""
     if not str(lake_uri).strip():
@@ -482,6 +466,21 @@ def run_news_cycle(
     if retry_backoff_seconds < 0:
         raise ValueError("retry backoff must be non-negative")
     started_at = utc_now_iso()
+    if dry_run:
+        return {
+            "status": "dry-run",
+            "product": "news",
+            "schema_version": "news.v1",
+            "attempts": 0,
+            "started_at": started_at,
+            "completed_at": utc_now_iso(),
+            "plan": {
+                "limit": limit,
+                "collector_timeout_seconds": collector_timeout_seconds,
+                "network": "not-used",
+                "writes": "not-used",
+            },
+        }
     try:
         with acquire_lock(lock_path, timeout_seconds=lock_timeout_seconds):
             last_error = "unknown"
@@ -574,6 +573,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--lock-timeout-seconds", type=float, default=0.0)
     parser.add_argument("--lock-path", type=Path, default=DEFAULT_LOCK_PATH)
     parser.add_argument("--max-age-hours", type=float, default=24.0)
+    parser.add_argument("--dry-run", action="store_true", help="Print the bounded plan without collection or writes")
     parser.add_argument("--json", action="store_true", dest="as_json")
     return parser
 
@@ -590,6 +590,7 @@ def main(argv: list[str] | None = None) -> int:
             retry_backoff_seconds=args.retry_backoff_seconds,
             lock_timeout_seconds=args.lock_timeout_seconds,
             max_age_hours=args.max_age_hours,
+            dry_run=args.dry_run,
         )
     except ValueError as exc:
         print(f"News cycle blocked: {exc}", file=sys.stderr)
@@ -610,7 +611,7 @@ def main(argv: list[str] | None = None) -> int:
                 f"{health.get('history_count', 0)} history, "
                 f"latest={health.get('latest_observed_at', 'unknown')}"
             )
-    return 0 if report["status"] == "ok" else 2 if report["status"] == "locked" else 1
+    return 0 if report["status"] in {"ok", "dry-run"} else 2 if report["status"] == "locked" else 1
 
 
 if __name__ == "__main__":

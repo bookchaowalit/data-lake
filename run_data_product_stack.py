@@ -253,6 +253,9 @@ def build_parser() -> argparse.ArgumentParser:
         "--check", action="store_true", help="Start APIs, verify health, then stop them"
     )
     parser.add_argument(
+        "--dry-run", action="store_true", help="Print the selected products without starting APIs"
+    )
+    parser.add_argument(
         "--products",
         action="append",
         metavar="NAME[,NAME...]",
@@ -291,6 +294,14 @@ def main(argv: list[str] | None = None) -> int:
     if not products:
         print("Stack blocked: at least one product is required.")
         return 2
+    if args.dry_run:
+        print(json.dumps({
+            "status": "dry-run",
+            "products": [product.product for product in products],
+            "network": "not-used",
+            "writes": "not-used",
+        }, ensure_ascii=False, sort_keys=True))
+        return 0
     if args.require_job_readiness:
         readiness = check_job_readiness(
             args.lake_uri,

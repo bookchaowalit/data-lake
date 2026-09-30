@@ -11,8 +11,6 @@ forced off for every child process.
 from __future__ import annotations
 
 import argparse
-import errno
-import fcntl
 import importlib
 import json
 import os
@@ -34,6 +32,11 @@ DEFAULT_LAKE_URI = str(ROOT / "data" / "lake-local" / "scraping-captures-v2")
 DEFAULT_LOCK_PATH = ROOT / "data" / "seo-feeds.lock"
 DEFAULT_LOG_DIR = ROOT / "data" / "logs" / "seo-capture"
 MAX_CHILD_OUTPUT_BYTES = 2 * 1024 * 1024
+
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -107,28 +110,12 @@ def require_dependencies() -> None:
 @contextmanager
 def acquire_lock(path: Path, *, timeout_seconds: float = 0.0) -> Iterator[None]:
     """Acquire an advisory lock and fail closed after a bounded wait."""
-    if timeout_seconds < 0:
-        raise ValueError("lock timeout must be non-negative")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle = path.open("a+")
-    deadline = time.monotonic() + timeout_seconds
-    try:
-        while True:
-            try:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-                break
-            except OSError as exc:
-                if exc.errno not in {errno.EACCES, errno.EAGAIN}:
-                    raise
-                if time.monotonic() >= deadline:
-                    raise LockBusyError("lock_busy") from None
-                time.sleep(min(0.25, max(0.01, deadline - time.monotonic())))
+    with _acquire_lock(
+        path,
+        timeout_seconds=timeout_seconds,
+        busy_error=LockBusyError,
+    ):
         yield
-    finally:
-        try:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        finally:
-            handle.close()
 
 
 def _safe_counts(output: str) -> dict[str, int]:
@@ -259,15 +246,30 @@ def run_seo_cycle(
     retry_backoff_seconds: float = 1.0,
     lock_timeout_seconds: float = 0.0,
     timeout_seconds: float | None = None,
+    dry_run: bool = False,
 ) -> dict[str, Any]:
     """Run the bounded SEO capture and retry only failed child attempts."""
-    validate_lake_uri(lake_uri)
-    require_dependencies()
     if attempts < 1:
         raise ValueError("attempts must be positive")
     if retry_backoff_seconds < 0:
         raise ValueError("retry backoff must be non-negative")
     started_at = utc_now_iso()
+    if dry_run:
+        return {
+            "status": "dry-run",
+            "product": "seo",
+            "attempts": 0,
+            "started_at": started_at,
+            "completed_at": utc_now_iso(),
+            "plan": {
+                "network": "not-used",
+                "writes": "not-used",
+                "timeout_seconds": timeout_seconds,
+            },
+            "result": {},
+        }
+    validate_lake_uri(lake_uri)
+    require_dependencies()
     try:
         with acquire_lock(lock_path, timeout_seconds=lock_timeout_seconds):
             result: dict[str, Any] = {}
@@ -314,6 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--retry-backoff-seconds", type=float, default=1.0)
     parser.add_argument("--lock-timeout-seconds", type=float, default=0.0)
     parser.add_argument("--timeout-seconds", type=float, default=None)
+    parser.add_argument("--dry-run", action="store_true", help="Print the bounded plan without collection or writes")
     parser.add_argument("--json", action="store_true", dest="as_json")
     return parser
 
@@ -329,6 +332,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             retry_backoff_seconds=args.retry_backoff_seconds,
             lock_timeout_seconds=args.lock_timeout_seconds,
             timeout_seconds=args.timeout_seconds,
+            dry_run=args.dry_run,
         )
     except (SeoCycleError, ValueError) as exc:
         report = {
@@ -351,7 +355,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
     return (
         0
-        if report["status"] == "ok"
+        if report["status"] in {"ok", "dry-run"}
         else 2
         if report["status"] in {"locked", "blocked"}
         else 1

@@ -61,9 +61,9 @@ def main(argv: list[str] | None = None) -> int:
     for path in inputs:
         try:
             stable_path = path.relative_to(ROOT)
-            forwarded.extend(("--input", str(stable_path)))
+            forwarded.extend(("--input", stable_path.as_posix()))
         except ValueError:
-            forwarded.extend(("--input", str(path)))
+            forwarded.extend(("--input", path.as_posix()))
     if args.project_csv:
         forwarded.append("--project-csv")
     if args.dry_run:
