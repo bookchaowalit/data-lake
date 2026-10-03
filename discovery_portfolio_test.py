@@ -6,6 +6,7 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
+from urllib.parse import urlsplit
 from unittest.mock import patch
 
 import yaml
@@ -174,6 +175,7 @@ class DiscoveryPortfolioTests(unittest.TestCase):
                         raw = json.dumps({
                             'title': source['title'],
                             'description': markers,
+                            'base_path': urlsplit(source['fetch_url']).path.removeprefix('/api/content'),
                             'details': {},
                         }).encode()
                     else:

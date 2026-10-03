@@ -20,12 +20,14 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake.scraping_coverage import (  # noqa: E402
+    CoverageConfigError,
     SCHEMA_VERSION,
     build_report,
     main as coverage_main,
     render_markdown,
     validate_config,
 )
+from data_lake import scraping_coverage  # noqa: E402
 
 
 NOW = datetime(2026, 8, 30, 12, 0, tzinfo=timezone.utc)
@@ -311,6 +313,191 @@ class ScrapingCoverageTests(unittest.TestCase):
             errors = validate_config(config, source_registry)
         self.assertIn("unmapped source registry jobs: unmapped_source", errors)
 
+    def test_unknown_job_requires_an_explicit_owned_inventory_gap(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            requirements, source, config, registry = self._fixtures(root)
+            registry["sources"] = []
+            self.assertIn("unknown source jobs in requirements: demo_source", validate_config(config, registry))
+            config["products"][0]["sources"][0]["inventory_gap"] = True
+            self._write_yaml(requirements, config)
+            self._write_yaml(source, registry)
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        self.assertEqual(report["validation_errors"], [])
+        self.assertEqual(report["source_jobs"][0]["operational_status"], "missing_registry")
+        self.assertFalse(report["products"][0]["end_to_end_ready"])
+        gap = next(gap for gap in report["gaps"] if gap["code"] == "source_registry")
+        self.assertIn("demo_source", gap["detail"])
+        self.assertEqual(gap["owner"], "book-demo-data")
+        self.assertTrue(gap["next_action"])
+
+    def test_inventory_gap_flag_must_be_boolean(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, _, config, registry = self._fixtures(Path(temp_dir))
+            config["products"][0]["sources"][0]["inventory_gap"] = "true"
+            errors = validate_config(config, registry)
+        self.assertIn("demo/demo_source: inventory_gap must be boolean", errors)
+
+    def test_snapshot_without_runtime_never_claims_live_readiness(self) -> None:
+        for status in ("active", "migrated"):
+            with self.subTest(status=status), tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                requirements, source, config, registry = self._fixtures(root, source_status=status)
+                registry["kind"] = "public-source-registry-snapshot"
+                registry["schema_version"] = "solo-empire.scraping-source-registry-snapshot.v1"
+                config["source_registry"]["runtime_path"] = "missing-runtime.yaml"
+                self._write_yaml(requirements, config)
+                self._write_yaml(source, registry)
+                report = build_report(root, requirements, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertEqual(report["validation_errors"], [])
+                self.assertEqual(report["source_registry_mode"], "snapshot")
+                self.assertEqual(report["source_jobs"][0]["registry_status"], "unknown")
+                self.assertEqual(report["products"][0]["capture_status"], "fresh")
+                self.assertEqual(report["products"][0]["lake_status"], "fresh")
+                self.assertEqual(report["summary"]["end_to_end_ready"], 0)
+                crontab = root / "crontab.txt"
+                crontab.write_text("# book-demo-data-feeds", encoding="utf-8")
+                with patch("builtins.print"):
+                    self.assertEqual(coverage_main([
+                        "--root", str(root), "--requirements", str(requirements),
+                        "--crontab-file", str(crontab), "--now", NOW.isoformat(), "--strict",
+                    ]), 2)
+
+    def test_present_runtime_is_used_and_malformed_runtime_is_not_hidden(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            requirements, source, config, registry = self._fixtures(root)
+            runtime = root / "runtime.yaml"
+            self._write_yaml(runtime, registry)
+            registry["kind"] = "public-source-registry-snapshot"
+            registry["schema_version"] = "solo-empire.scraping-source-registry-snapshot.v1"
+            self._write_yaml(source, registry)
+            config["source_registry"]["runtime_path"] = "runtime.yaml"
+            self._write_yaml(requirements, config)
+            report = build_report(root, requirements, crontab_text="# book-demo-data-feeds", now=NOW)
+            self.assertEqual(report["source_registry_mode"], "runtime")
+            self.assertEqual(report["summary"]["end_to_end_ready"], 1)
+            runtime.write_text("[fixture-private-marker", encoding="utf-8")
+            with self.assertRaises(CoverageConfigError) as error:
+                build_report(root, requirements, crontab_text="", now=NOW)
+            self.assertNotIn("fixture-private-marker", str(error.exception))
+
+    def test_fallback_snapshot_requires_its_kind_and_schema(self) -> None:
+        for field, value in (
+            ("kind", None), ("kind", "snapshot-typo"),
+            ("schema_version", None), ("schema_version", "schema-typo"),
+        ):
+            with self.subTest(field=field, value=value), tempfile.TemporaryDirectory() as temp_dir:
+                root = Path(temp_dir)
+                requirements, source, config, registry = self._fixtures(root)
+                config["source_registry"]["runtime_path"] = "missing-runtime.yaml"
+                registry.update(kind="public-source-registry-snapshot", schema_version="solo-empire.scraping-source-registry-snapshot.v1")
+                if value is None:
+                    registry.pop(field)
+                else:
+                    registry[field] = value
+                self._write_yaml(requirements, config)
+                self._write_yaml(source, registry)
+                for override in (None, source):
+                    with self.subTest(override=override), self.assertRaises(CoverageConfigError):
+                        build_report(root, requirements, override, crontab_text="# book-demo-data-feeds", now=NOW)
+
+    def test_runtime_path_cannot_read_sensitive_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            requirements, _, config, registry = self._fixtures(root)
+            for name in (".env", ".env.local", ".ENV.production"):
+                with self.subTest(name=name):
+                    config["source_registry"]["runtime_path"] = "infra/" + name
+                    self.assertIn("source_registry.runtime_path must be a safe repository-relative path", validate_config(config, registry))
+                    self._write_yaml(requirements, config)
+                    with patch("data_lake.scraping_coverage._load_yaml", wraps=scraping_coverage._load_yaml) as load:
+                        with self.assertRaises(CoverageConfigError):
+                            build_report(root, requirements, crontab_text="", now=NOW)
+                    self.assertEqual(load.call_count, 1)
+
+    def test_registry_paths_reject_sensitive_or_external_symlink_targets(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            parent = Path(temp_dir)
+            root = parent / "repository"
+            requirements, _, config, _ = self._fixtures(root)
+            outside = parent / "outside.yaml"
+            sensitive = root / ".env.local"
+            for target in (outside, sensitive):
+                target.write_text("fixture-only: never read", encoding="utf-8")
+                for field in ("path", "runtime_path", "override"):
+                    with self.subTest(target=target.name, field=field):
+                        link = root / "linked-registry.yaml"
+                        if link.is_symlink():
+                            link.unlink()
+                        try:
+                            link.symlink_to(target)
+                        except OSError:
+                            self.skipTest("host does not permit symlink creation")
+                        fixture_config = dict(config, source_registry=dict(config["source_registry"]))
+                        override = link if field == "override" else None
+                        if field != "override":
+                            fixture_config["source_registry"][field] = link.name
+                        self._write_yaml(requirements, fixture_config)
+                        with patch("data_lake.scraping_coverage._load_yaml", wraps=scraping_coverage._load_yaml) as load:
+                            with self.assertRaises(CoverageConfigError):
+                                build_report(root, requirements, override, crontab_text="", now=NOW)
+                        self.assertEqual(load.call_count, 1)
+
+    def test_malformed_and_duplicate_registry_rows_fail_validation(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            _, _, config, registry = self._fixtures(Path(temp_dir))
+            for malformed in (None, {}, "invalid"):
+                self.assertIn("source registry sources must be a list", validate_config(config, {"sources": malformed}))
+            self.assertIn("source registry rows must have a non-empty job", validate_config(config, {"sources": [{}]}))
+            registry["sources"].append(dict(registry["sources"][0]))
+            self.assertIn("duplicate source registry job: demo_source", validate_config(config, registry))
+            registry["sources"][0]["status"] = None
+            self.assertIn("source registry job demo_source must have a non-empty status", validate_config(config, registry))
+
+    def test_checked_in_snapshot_is_a_pinned_public_metadata_projection(self) -> None:
+        snapshot_path = ROOT / "systems" / "ai-data" / "scraping-source-registry.snapshot.yaml"
+        snapshot = yaml.safe_load(snapshot_path.read_text(encoding="utf-8"))
+        provenance = snapshot["provenance"]
+        fields = ["job", "business", "source", "channel", "schedule", "status", "owner_repository"]
+        self.assertEqual(provenance["projection_fields"], fields)
+        self.assertRegex(provenance["commit"], r"^[0-9a-f]{40}$")
+        self.assertEqual(snapshot["kind"], "public-source-registry-snapshot")
+        self.assertTrue(snapshot["policy"]["metadata_only"])
+        for row in snapshot["sources"]:
+            self.assertTrue(set(row) <= set(fields))
+        owner = ROOT / provenance["local_path"]
+        if owner.is_dir():
+            result = subprocess.run(
+                ["git", "-C", str(owner), "show", f"{provenance['commit']}:{provenance['path']}"],
+                capture_output=True, text=True, encoding="utf-8", timeout=10,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            canonical = yaml.safe_load(result.stdout)
+            projection = [{key: row[key] for key in fields if key in row} for row in canonical["sources"]]
+            self.assertEqual(snapshot["sources"], projection)
+
+    def test_checked_in_metadata_is_portable_without_nested_checkouts(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            for relative in (
+                "systems/ai-data/scraping-data-coverage.yaml",
+                "systems/ai-data/scraping-source-registry.snapshot.yaml",
+            ):
+                destination = root / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_text((ROOT / relative).read_text(encoding="utf-8"), encoding="utf-8")
+            fixture = ROOT / "infra/tests/fixtures/data_lake/scraping-host-crontab.example"
+            report = build_report(root, root / "systems/ai-data/scraping-data-coverage.yaml", crontab_text=fixture.read_text(encoding="utf-8"), now=NOW)
+        self.assertEqual(report["validation_errors"], [])
+        self.assertEqual(report["source_registry_mode"], "snapshot")
+        self.assertEqual(report["summary"]["end_to_end_ready"], 0)
+        self.assertEqual(report["summary"]["collection_ready"], 0)
+        self.assertEqual(report["summary"]["unregistered_source_jobs"], 7)
+        missing = {row["job"] for row in report["source_jobs"] if row["registry_status"] == "missing"}
+        self.assertEqual(missing, {"notebookspec_tech", "matichon_news", "thai_business_news", "thai_tech_news", "kaidee_classifieds", "wongnai_bangkok", "wongnai_upcountry"})
+        self.assertTrue(any(gap["code"] == "source_registry" for gap in report["gaps"]))
+
     def test_sensitive_evidence_path_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
@@ -341,11 +528,9 @@ class ScrapingCoverageTests(unittest.TestCase):
         fixture = ROOT / "infra" / "tests" / "fixtures" / "data_lake" / "scraping-host-crontab.example"
         self.assertTrue(fixture.is_file())
         requirements = ROOT / "systems" / "ai-data" / "scraping-data-coverage.yaml"
-        source_registry = ROOT / "projects" / "product" / "engineering" / "book-dev" / "github" / "bookchaowalit" / "book-apps" / "tools" / "book-job-scraping" / "config" / "source_coverage.yaml"
         report = build_report(
             ROOT,
             requirements,
-            source_registry,
             crontab_text=fixture.read_text(encoding="utf-8"),
             crontab_status="fixture",
             now=NOW,

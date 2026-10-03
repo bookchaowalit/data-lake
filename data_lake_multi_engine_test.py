@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import importlib.util
 import json
 import os
 import sys
@@ -24,6 +23,7 @@ from data_lake.engines.base import (  # noqa: E402
     normalize_latest_rows,
 )
 from data_lake.engines.lab_runtime import optional_env_postgres  # noqa: E402
+from data_lake.engines.native_runtime import probe_embedded_clickhouse  # noqa: E402
 from data_lake.engines.suite import (  # noqa: E402
     discover_bronze_parquet,
     run_benchmark,
@@ -49,9 +49,10 @@ def _skip_unless_runtime(available: bool, reason: str):
 
 
 def _requires_chdb():
+    available, detail = probe_embedded_clickhouse()
     return _skip_unless_runtime(
-        importlib.util.find_spec("chdb") is not None,
-        "Embedded ClickHouse lab requires chdb; no Windows binary distribution",
+        available,
+        detail or "Embedded ClickHouse lab requires chdb; no Windows binary distribution",
     )
 
 
@@ -94,6 +95,16 @@ class MultiEngineLabTests(unittest.TestCase):
                 skipped = _requires_chdb()(lambda: None)
                 self.assertTrue(skipped.__unittest_skip__)
                 self.assertIn("chdb", skipped.__unittest_skip_why__)
+
+    def test_optional_clickhouse_gate_does_not_hide_crashed_ci_runtime(self):
+        with patch(f"{__name__}.probe_embedded_clickhouse", return_value=(False, "chdb signal 4")):
+            with patch.dict(os.environ, {"SOLO_EMPIRE_CI": "1"}):
+                with self.assertRaisesRegex(RuntimeError, "SOLO_EMPIRE_CI=1"):
+                    _requires_chdb()
+            with patch.dict(os.environ, {"SOLO_EMPIRE_CI": "0"}):
+                skipped = _requires_chdb()(lambda: None)
+                self.assertTrue(skipped.__unittest_skip__)
+                self.assertIn("signal 4", skipped.__unittest_skip_why__)
 
     def test_roles_and_source_of_truth_flags(self):
         duck = get_engine("duckdb")
