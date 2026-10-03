@@ -25,6 +25,7 @@ from .base import (
     normalize_lineage_rows,
     read_bronze_dicts,
 )
+from .native_runtime import probe_embedded_clickhouse
 
 
 class ClickHouseLakeEngine(LakeQueryEngine):
@@ -53,6 +54,9 @@ class ClickHouseLakeEngine(LakeQueryEngine):
         if self._client is not None or self._workdir is not None:
             return
         if self.prefer_embedded or not self.dsn:
+            available, detail = probe_embedded_clickhouse()
+            if not available:
+                raise RuntimeError(detail)
             try:
                 import chdb  # type: ignore  # noqa: F401
             except ImportError as exc:

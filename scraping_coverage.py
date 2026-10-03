@@ -2,7 +2,8 @@
 """Audit scraping/source-product coverage from requirement to lake delivery.
 
 The audit is local and read-only. It joins the root requirements registry with
-the nested scraper scheduler registry, current crontab tags, capture-file
+the local scraper scheduler registry or a tracked public metadata snapshot,
+current crontab tags, capture-file
 freshness, local lake evidence, and versioned contract files. It never reads
 raw records, credentials, environment files, or remote provider data.
 """
@@ -29,6 +30,8 @@ if str(SCRIPTS) not in sys.path:
 ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_REQUIREMENTS = ROOT / "systems" / "ai-data" / "scraping-data-coverage.yaml"
 SCHEMA_VERSION = "solo-empire.scraping-data-coverage.v1"
+SNAPSHOT_KIND = "public-source-registry-snapshot"
+SNAPSHOT_SCHEMA_VERSION = "solo-empire.scraping-source-registry-snapshot.v1"
 READY_SOURCE_STATUSES = {"active", "migrated"}
 READY_PERMISSION_STATUSES = {"approved", "bounded"}
 ALLOWED_PRIORITIES = {"P0", "P1", "P2"}
@@ -70,8 +73,8 @@ def _load_yaml(path: Path, label: str) -> dict[str, Any]:
         raise CoverageConfigError(f"missing {label}: {path}")
     try:
         payload = yaml.safe_load(path.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        raise CoverageConfigError(f"invalid YAML in {label}: {exc}") from exc
+    except yaml.YAMLError:
+        raise CoverageConfigError(f"invalid YAML in {label}") from None
     if not isinstance(payload, dict):
         raise CoverageConfigError(f"{label} must be a YAML mapping: {path}")
     return payload
@@ -86,7 +89,23 @@ def _safe_pattern(pattern: Any) -> bool:
         return False
     pure = PurePosixPath(pattern)
     lowered = {part.lower() for part in pure.parts}
-    return not pure.is_absolute() and ".." not in pure.parts and not (lowered & SENSITIVE_PATH_PARTS)
+    return (
+        not pure.is_absolute()
+        and ".." not in pure.parts
+        and not (lowered & SENSITIVE_PATH_PARTS)
+        and not any(part.startswith(".env") for part in lowered)
+    )
+
+
+def _registry_path(root: Path, value: Path) -> Path:
+    """Check both a declared registry path and its target before probing/reading."""
+    requested = _relative_input(root, value)
+    if not requested.is_relative_to(root) or not _safe_pattern(requested.relative_to(root).as_posix()):
+        raise CoverageConfigError("source registry path must be a safe path inside repository root")
+    resolved = requested.resolve()
+    if not resolved.is_relative_to(root) or not _safe_pattern(resolved.relative_to(root).as_posix()):
+        raise CoverageConfigError("source registry target must be a safe path inside repository root")
+    return resolved
 
 
 def _source_rows(source_registry: dict[str, Any]) -> list[dict[str, Any]]:
@@ -105,6 +124,8 @@ def validate_config(
     registry_cfg = config.get("source_registry")
     if not isinstance(registry_cfg, dict) or not _safe_pattern(registry_cfg.get("path")):
         errors.append("source_registry.path must be a safe repository-relative path")
+    if isinstance(registry_cfg, dict) and "runtime_path" in registry_cfg and not _safe_pattern(registry_cfg["runtime_path"]):
+        errors.append("source_registry.runtime_path must be a safe repository-relative path")
 
     products = config.get("products")
     if not isinstance(products, list) or not products:
@@ -112,6 +133,7 @@ def validate_config(
 
     product_ids: set[str] = set()
     mapped_jobs: dict[str, str] = {}
+    inventory_gaps: set[str] = set()
     for index, product in enumerate(products, 1):
         if not isinstance(product, dict):
             errors.append(f"products[{index}] must be a mapping")
@@ -158,6 +180,10 @@ def validate_config(
             if job in mapped_jobs:
                 errors.append(f"source job {job} is mapped by both {mapped_jobs[job]} and {product_id}")
             mapped_jobs[job] = product_id
+            if "inventory_gap" in source and not isinstance(source["inventory_gap"], bool):
+                errors.append(f"{product_id}/{job}: inventory_gap must be boolean")
+            elif source.get("inventory_gap") is True:
+                inventory_gaps.add(job)
             capture = source.get("capture")
             if not isinstance(capture, dict):
                 errors.append(f"{product_id}/{job}: capture evidence is required")
@@ -204,13 +230,26 @@ def validate_config(
             errors.append(f"{product_id}: unsafe delivery.contract_path")
 
     if source_registry is not None:
+        registry_sources = source_registry.get("sources")
+        if not isinstance(registry_sources, list):
+            errors.append("source registry sources must be a list")
+        seen_jobs: set[str] = set()
+        for row in registry_sources if isinstance(registry_sources, list) else []:
+            if not isinstance(row, dict) or not isinstance(row.get("job"), str) or not row["job"].strip():
+                errors.append("source registry rows must have a non-empty job")
+                continue
+            if row["job"] in seen_jobs:
+                errors.append(f"duplicate source registry job: {row['job']}")
+            seen_jobs.add(row["job"])
+            if not isinstance(row.get("status"), str) or not row["status"].strip():
+                errors.append(f"source registry job {row['job']} must have a non-empty status")
         registry_jobs = {
             row.get("job")
             for row in _source_rows(source_registry)
             if isinstance(row.get("job"), str)
         }
         missing_mappings = sorted(registry_jobs - set(mapped_jobs))
-        unknown_jobs = sorted(set(mapped_jobs) - registry_jobs)
+        unknown_jobs = sorted(set(mapped_jobs) - registry_jobs - inventory_gaps)
         if missing_mappings:
             errors.append("unmapped source registry jobs: " + ", ".join(missing_mappings))
         if unknown_jobs:
@@ -383,9 +422,31 @@ def build_report(
     now = (now or _utc_now()).astimezone(timezone.utc)
     requirements_path = (requirements_path or DEFAULT_REQUIREMENTS).resolve()
     config = _load_yaml(requirements_path, "scraping coverage requirements")
-    configured_source_path = Path(str(config.get("source_registry", {}).get("path", "")))
-    source_registry_path = _relative_input(root, source_registry_path or configured_source_path).resolve()
-    source_registry = _load_yaml(source_registry_path, "nested source coverage registry")
+    registry_cfg = config.get("source_registry", {})
+    if not isinstance(registry_cfg, dict) or not _safe_pattern(registry_cfg.get("path")):
+        raise CoverageConfigError("source_registry.path must be a safe repository-relative path")
+    runtime_path = registry_cfg.get("runtime_path")
+    if runtime_path is not None and not _safe_pattern(runtime_path):
+        raise CoverageConfigError("source_registry.runtime_path must be a safe repository-relative path")
+    registry_mode = "provided" if source_registry_path is not None else "configured"
+    configured_source_path = _registry_path(root, Path(registry_cfg["path"]))
+    candidate = _registry_path(root, Path(runtime_path)) if runtime_path else None
+    if source_registry_path is None:
+        if candidate is not None and candidate.exists():
+            source_registry_path = candidate
+            registry_mode = "runtime"
+        else:
+            source_registry_path = configured_source_path
+            if runtime_path:
+                registry_mode = "snapshot"
+    source_registry_path = _registry_path(root, source_registry_path)
+    if runtime_path and source_registry_path == configured_source_path:
+        registry_mode = "snapshot"
+    source_registry = _load_yaml(source_registry_path, "source coverage registry")
+    if registry_mode == "snapshot" or source_registry.get("kind") == SNAPSHOT_KIND:
+        if source_registry.get("kind") != SNAPSHOT_KIND or source_registry.get("schema_version") != SNAPSHOT_SCHEMA_VERSION:
+            raise CoverageConfigError("fallback source registry must declare the snapshot kind and schema")
+        registry_mode = "snapshot"
     validation_errors = validate_config(config, source_registry)
 
     source_by_job = {
@@ -434,9 +495,16 @@ def build_report(
                 now,
             )
             registry_status = str(registry_row.get("status")) if registry_row else "missing"
+            declared_registry_status = registry_status
+            if registry_mode == "snapshot" and registry_status in READY_SOURCE_STATUSES:
+                registry_status = "unknown"
             quality_status = str(source_spec.get("quality_status", "verified"))
             if registry_status not in READY_SOURCE_STATUSES:
-                operational = "blocked" if registry_status in {"blocked", "planned"} else "missing_registry"
+                operational = (
+                    "blocked" if registry_status in {"blocked", "planned"}
+                    else "unverified" if registry_status == "unknown"
+                    else "missing_registry"
+                )
             elif quality_status not in {"verified", "accepted"}:
                 operational = "degraded"
             else:
@@ -449,6 +517,7 @@ def build_report(
                 "channel": registry_row.get("channel") if registry_row else None,
                 "schedule": registry_row.get("schedule") if registry_row else None,
                 "registry_status": registry_status,
+                "declared_registry_status": declared_registry_status,
                 "owner_repository": registry_row.get("owner_repository") if registry_row else None,
                 "quality_status": quality_status,
                 "quality_note": source_spec.get("quality_note"),
@@ -558,6 +627,14 @@ def build_report(
 
         issue_specs: list[tuple[str, bool, str]] = [
             ("source_inventory", collection_status == "missing_inventory", "No source job is mapped"),
+            (
+                "source_registry",
+                any(row["operational_status"] in {"missing_registry", "unverified"} for row in source_results),
+                "Missing or unverified source registry evidence: " + ", ".join(
+                    row["job"] for row in source_results
+                    if row["operational_status"] in {"missing_registry", "unverified"}
+                ),
+            ),
             ("collection", collection_status not in {"ready", "missing_inventory"}, f"Collection is {collection_status}"),
             ("permission", permission_status not in READY_PERMISSION_STATUSES, f"Permission is {permission_status}"),
             ("schedule", bool(cron_tags) and cron_state != "present", "Expected cron tag is missing"),
@@ -585,8 +662,8 @@ def build_report(
     mapped_jobs = {row["job"] for row in source_matrix}
     registry_jobs = {str(row.get("job")) for row in source_rows if row.get("job")}
     status_counts: dict[str, int] = {}
-    for row in source_rows:
-        status = str(row.get("status", "unknown"))
+    for row in source_matrix:
+        status = str(row["registry_status"])
         status_counts[status] = status_counts.get(status, 0) + 1
 
     metrics = {
@@ -618,6 +695,7 @@ def build_report(
         "end_to_end_ready_pct": _percent(metrics["end_to_end_ready"], total_required),
         "source_registry_jobs": len(registry_jobs),
         "mapped_source_jobs": len(registry_jobs & mapped_jobs),
+        "unregistered_source_jobs": len(mapped_jobs - registry_jobs),
         "source_job_mapping_pct": _percent(len(registry_jobs & mapped_jobs), len(registry_jobs)),
         "source_status_counts": dict(sorted(status_counts.items())),
         "p0_gaps": sum(1 for gap in gaps if gap["priority"] == "P0"),
@@ -634,6 +712,8 @@ def build_report(
         "source_registry_path": source_registry_path.relative_to(root).as_posix()
         if source_registry_path.is_relative_to(root)
         else str(source_registry_path),
+        "source_registry_mode": registry_mode,
+        "source_registry_provenance": source_registry.get("provenance", {}),
         "scope": config.get("scope", {}),
         "safety": {
             "network": "local-loopback-probe-only" if probe_api else "not-used",
@@ -667,6 +747,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "",
         f"Generated: `{report['generated_at']}`  ",
         f"Contract: `{report['contract']}`  ",
+        f"Source registry evidence: `{report.get('source_registry_mode', 'unknown')}`  ",
         "Evidence boundary: local metadata, file timestamps, crontab tags, lake parts, and contract files only; raw records and credentials are not read.",
         "",
         "## Coverage summary",
@@ -799,7 +880,9 @@ def render_text(report: dict[str, Any]) -> str:
             "Scraping / source-product coverage",
             "=" * 72,
             f"Requirements: {summary['required_products']}",
+            f"Source registry evidence: {report.get('source_registry_mode', 'unknown')}",
             f"Source jobs mapped: {summary['mapped_source_jobs']}/{summary['source_registry_jobs']} ({summary['source_job_mapping_pct']:.1f}%)",
+            f"Required source jobs not registered: {summary.get('unregistered_source_jobs', 0)}",
             f"Requirements with source inventory: {summary['inventory_mapped']}/{summary['required_products']} ({summary['inventory_coverage_pct']:.1f}%)",
             f"Collection ready: {summary['collection_ready']}/{summary['required_products']} ({summary['collection_ready_pct']:.1f}%)",
             f"Permission ready: {summary['permission_ready']}/{summary['required_products']} ({summary['permission_ready_pct']:.1f}%)",
@@ -854,7 +937,7 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     root = args.root.resolve()
     requirements = _relative_input(root, args.requirements).resolve()
-    source_registry = _relative_input(root, args.source_registry).resolve() if args.source_registry else None
+    source_registry = _relative_input(root, args.source_registry) if args.source_registry else None
     crontab_text = None
     crontab_status = None
     try:
