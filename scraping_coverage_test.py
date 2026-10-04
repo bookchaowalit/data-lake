@@ -44,6 +44,20 @@ class ScrapingCoverageTests(unittest.TestCase):
         timestamp = modified.timestamp()
         os.utime(path, (timestamp, timestamp))
 
+    def _manifest(
+        self, lake_root: Path, *, received_at: object = NOW.isoformat(),
+        bronze_key: str = "bronze/domain=demo/dataset=demo/part.parquet",
+        batch: str = "demo",
+    ) -> Path:
+        path = lake_root / "control" / "manifests" / "source=demo" / f"batch_id={batch}.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({
+            "manifest_version": "1", "source": "demo", "domain": "demo", "dataset": "demo",
+            "received_at": received_at, "bronze": {"key": bronze_key},
+        }), encoding="utf-8")
+        os.utime(path, (NOW.timestamp(), NOW.timestamp()))
+        return path
+
     def _fixtures(self, root: Path, *, source_status: str = "active") -> tuple[Path, Path, dict, dict]:
         source_registry = {
             "schema_version": "fixture.source-coverage.v1",
@@ -116,6 +130,7 @@ class ScrapingCoverageTests(unittest.TestCase):
         self._write_yaml(source_path, source_registry)
         self._touch(root / "capture" / "demo.csv")
         self._touch(root / "data" / "lake" / "bronze" / "domain=demo" / "dataset=demo" / "part.parquet")
+        self._manifest(root / "data" / "lake")
         contract = root / "contracts" / "demo.yaml"
         contract.parent.mkdir(parents=True, exist_ok=True)
         contract.write_text("schema_version: demo.v1\n", encoding="utf-8")
@@ -186,6 +201,7 @@ class ScrapingCoverageTests(unittest.TestCase):
             requirements, source, _, _ = self._fixtures(root)
             lake_file = root / "data" / "lake" / "bronze" / "domain=demo" / "dataset=demo" / "part.parquet"
             self._touch(lake_file, NOW - timedelta(hours=12))
+            self._manifest(root / "data" / "lake", received_at=(NOW - timedelta(hours=12)).isoformat())
             report = build_report(
                 root,
                 requirements,
@@ -197,6 +213,165 @@ class ScrapingCoverageTests(unittest.TestCase):
         self.assertEqual(report["products"][0]["stage"], "lake_stale")
         self.assertEqual(report["summary"]["end_to_end_ready"], 0)
         self.assertIn("lake", {gap["code"] for gap in report["gaps"]})
+
+    def test_copied_lake_files_do_not_refresh_committed_ingest_time(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, _, _ = self._fixtures(root)
+            received_at = NOW - timedelta(hours=12)
+            self._manifest(root / "data" / "lake", received_at=received_at.isoformat())
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        product = report["products"][0]
+        self.assertEqual(product["lake_status"], "stale")
+        self.assertEqual(product["lake_datasets"][0]["age_hours"], 12.0)
+        self.assertEqual(product["lake_datasets"][0]["age_basis"], "manifest_received_at")
+        self.assertEqual(product["lake_datasets"][0]["received_at"], received_at.isoformat())
+        self.assertEqual(product["lake_datasets"][0]["modified_at"], NOW.isoformat())
+        self.assertEqual(report["summary"]["end_to_end_ready"], 0)
+
+    def test_old_file_mtime_does_not_make_recent_committed_ingest_stale(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, _, _ = self._fixtures(root)
+            lake_file = root / "data/lake/bronze/domain=demo/dataset=demo/part.parquet"
+            self._touch(lake_file, NOW - timedelta(hours=12))
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        self.assertEqual(report["products"][0]["lake_status"], "fresh")
+        self.assertEqual(report["products"][0]["lake_datasets"][0]["age_hours"], 0.0)
+
+    def test_lake_requires_valid_timezone_aware_nonfuture_manifest_timestamp(self) -> None:
+        for received_at in (None, "invalid", 1, {}, NOW.replace(tzinfo=None).isoformat(),
+                            (NOW + timedelta(seconds=1)).isoformat(),
+                            "0001-01-01T00:00:00+23:59", "9999-12-31T23:59:59-23:59"):
+            with self.subTest(received_at=received_at), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                requirements, source, _, _ = self._fixtures(root)
+                self._manifest(root / "data/lake", received_at=received_at)
+                report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertNotEqual(report["products"][0]["lake_status"], "fresh")
+                self.assertIsNone(report["products"][0]["lake_datasets"][0]["age_hours"])
+                self.assertEqual(report["summary"]["end_to_end_ready"], 0)
+
+    def test_lake_timestamp_normalizes_offsets_and_includes_threshold_boundary(self) -> None:
+        for received_at, status in (("2026-08-30T15:00:00+07:00", "fresh"),
+                                    ("2026-08-30T07:59:59Z", "stale")):
+            with self.subTest(received_at=received_at), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                requirements, source, _, _ = self._fixtures(root)
+                self._manifest(root / "data/lake", received_at=received_at)
+                report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertEqual(report["products"][0]["lake_status"], status)
+
+    def test_lake_ignores_uncommitted_parts_and_checkpoint_only_batches(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, config, _ = self._fixtures(root)
+            config["products"][0]["lake"]["datasets"][0]["paths"] = [
+                "data/lake/bronze/domain=demo/dataset=demo/*.parquet"
+            ]
+            self._write_yaml(requirements, config)
+            lake_root = root / "data/lake"
+            self._manifest(lake_root, received_at=(NOW - timedelta(hours=12)).isoformat())
+            uncommitted_key = "bronze/domain=demo/dataset=demo/uncommitted.parquet"
+            self._touch(lake_root / uncommitted_key)
+            checkpoint = lake_root / "control/checkpoints/source=demo/batch_id=uncommitted.json"
+            checkpoint.parent.mkdir(parents=True, exist_ok=True)
+            checkpoint.write_text(json.dumps({"received_at": NOW.isoformat(), "bronze_key": uncommitted_key}), encoding="utf-8")
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        evidence = report["products"][0]["lake_datasets"][0]
+        self.assertEqual(evidence["status"], "stale")
+        self.assertEqual(evidence["matched_files"], 2)
+        self.assertEqual(evidence["committed_files"], 1)
+        self.assertTrue(evidence["path"].endswith("/part.parquet"))
+
+    def test_lake_selects_latest_committed_timestamp_instead_of_latest_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, config, _ = self._fixtures(root)
+            config["products"][0]["lake"]["datasets"][0]["paths"] = [
+                "data/lake/bronze/domain=demo/dataset=demo/*.parquet"
+            ]
+            self._write_yaml(requirements, config)
+            lake_root = root / "data/lake"
+            self._manifest(lake_root, received_at=(NOW - timedelta(hours=12)).isoformat())
+            recent_key = "bronze/domain=demo/dataset=demo/recent.parquet"
+            self._touch(lake_root / recent_key, NOW - timedelta(hours=24))
+            self._manifest(lake_root, received_at=NOW.isoformat(), bronze_key=recent_key, batch="recent")
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        evidence = report["products"][0]["lake_datasets"][0]
+        self.assertEqual(evidence["status"], "fresh")
+        self.assertEqual(evidence["committed_files"], 2)
+        self.assertTrue(evidence["path"].endswith("/recent.parquet"))
+        self.assertEqual(evidence["received_at"], NOW.isoformat())
+
+    def test_lake_missing_or_malformed_commit_marker_is_not_ready(self) -> None:
+        for content in (None, "[", "[]", "{}", '{"bronze": []}'):
+            with self.subTest(content=content), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                requirements, source, _, _ = self._fixtures(root)
+                manifest = self._manifest(root / "data/lake")
+                if content is None:
+                    manifest.unlink()
+                else:
+                    manifest.write_text(content, encoding="utf-8")
+                report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertNotEqual(report["products"][0]["lake_status"], "fresh")
+                self.assertEqual(report["summary"]["end_to_end_ready"], 0)
+
+    def test_lake_manifest_reference_must_be_safe_and_within_its_lake_root(self) -> None:
+        for key in (".", "./", "../lake/bronze/domain=demo/dataset=demo/part.parquet",
+                    "/bronze/domain=demo/dataset=demo/part.parquet",
+                    "bronze/../bronze/domain=demo/dataset=demo/part.parquet",
+                    "bronze/.env/part.parquet", "s3://bucket/part.parquet",
+                    "bronze/domain=demo/dataset=other/part.parquet", "bronze/\x00.parquet"):
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                requirements, source, _, _ = self._fixtures(root)
+                self._manifest(root / "data/lake", bronze_key=key)
+                report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertNotEqual(report["products"][0]["lake_status"], "fresh")
+
+    def test_lake_rejects_external_manifest_and_part_symlink_targets(self) -> None:
+        for linked in ("manifest", "part"):
+            with self.subTest(linked=linked), tempfile.TemporaryDirectory() as directory:
+                parent = Path(directory)
+                root = parent / "repository"
+                requirements, source, _, _ = self._fixtures(root)
+                target = parent / "external.fixture"
+                if linked == "manifest":
+                    link = self._manifest(root / "data/lake")
+                    target.write_bytes(link.read_bytes())
+                else:
+                    link = root / "data/lake/bronze/domain=demo/dataset=demo/part.parquet"
+                    target.write_bytes(b"fixture")
+                link.unlink()
+                try:
+                    link.symlink_to(target)
+                except OSError:
+                    self.skipTest("host does not permit symlink creation")
+                original_read = Path.read_text
+                def safe_read(path, *args, **kwargs):
+                    self.assertTrue(path.resolve().is_relative_to(root), "external symlink target read")
+                    return original_read(path, *args, **kwargs)
+                with patch.object(Path, "read_text", safe_read):
+                    report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+                self.assertNotEqual(report["products"][0]["lake_status"], "fresh")
+
+    def test_lake_rejects_manifest_symlink_to_another_local_lake(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, _, _ = self._fixtures(root)
+            marker = self._manifest(root / "data/lake")
+            target = root / "data/other-lake/manifest.json"
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(marker.read_bytes())
+            marker.unlink()
+            try:
+                marker.symlink_to(target)
+            except OSError:
+                self.skipTest("host does not permit symlink creation")
+            report = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+            self.assertNotEqual(report["products"][0]["lake_status"], "fresh")
 
     def test_draft_or_pending_contract_is_present_but_not_ready(self) -> None:
         for lifecycle, approval in (
@@ -252,6 +427,7 @@ class ScrapingCoverageTests(unittest.TestCase):
                 / "dataset=demo"
                 / "part.parquet"
             )
+            self._manifest(root / "data/lake-local/scraping-captures-v2")
             report = build_report(
                 root,
                 requirements,
