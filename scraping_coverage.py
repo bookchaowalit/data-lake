@@ -4,7 +4,7 @@
 The audit is local and read-only. It joins the root requirements registry with
 the local scraper scheduler registry or a tracked public metadata snapshot,
 current crontab tags, capture-file
-freshness, local lake evidence, and versioned contract files. It never reads
+freshness, manifest-committed lake ingest times, and versioned contract files. It never reads
 raw records, credentials, environment files, or remote provider data.
 """
 
@@ -273,6 +273,7 @@ def _evidence(root: Path, paths: list[str], max_age_hours: float, now: datetime)
             "age_hours": None,
             "max_age_hours": max_age_hours,
             "matched_files": 0,
+            "age_basis": "file_mtime",
         }
     newest = max(files.values(), key=lambda item: item.stat().st_mtime)
     modified = datetime.fromtimestamp(newest.stat().st_mtime, tz=timezone.utc)
@@ -284,7 +285,107 @@ def _evidence(root: Path, paths: list[str], max_age_hours: float, now: datetime)
         "age_hours": round(age_hours, 1),
         "max_age_hours": max_age_hours,
         "matched_files": len(files),
+        "age_basis": "file_mtime",
     }
+
+
+def _safe_evidence_file(root: Path, path: Path) -> bool:
+    """Check a metadata/part path and its resolved target before accessing it."""
+    try:
+        resolved = path.resolve()
+        return (
+            path.is_relative_to(root)
+            and _safe_pattern(path.relative_to(root).as_posix())
+            and resolved.is_relative_to(root)
+            and _safe_pattern(resolved.relative_to(root).as_posix())
+            and path.is_file()
+        )
+    except (OSError, RuntimeError, ValueError):
+        return False
+
+
+def _committed_ingest_times(
+    root: Path, lake_root: Path, now: datetime,
+) -> dict[Path, tuple[datetime, Path]]:
+    """Index final source commit markers without reading source or Parquet bytes."""
+    committed: dict[Path, tuple[datetime, Path]] = {}
+    for marker in lake_root.glob("control/manifests/source=*/batch_id=*.json"):
+        if not _safe_evidence_file(root, marker) or not marker.resolve().is_relative_to(lake_root.resolve()):
+            continue
+        try:
+            manifest = json.loads(marker.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(manifest, dict) or not isinstance(manifest.get("bronze"), dict):
+            continue
+        key = manifest["bronze"].get("key")
+        timestamp = manifest.get("received_at")
+        if not _safe_pattern(key) or not isinstance(timestamp, str):
+            continue
+        key_parts = PurePosixPath(key).parts
+        if not key_parts or key_parts[0] != "bronze":
+            continue
+        try:
+            received_at = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+            if received_at.tzinfo is None:
+                continue
+            received_at = received_at.astimezone(timezone.utc)
+        except (ValueError, OverflowError):
+            continue
+        if received_at > now:
+            continue
+        part = lake_root / key
+        if not _safe_evidence_file(root, part) or not part.resolve().is_relative_to(lake_root.resolve()):
+            continue
+        previous = committed.get(part)
+        if previous is None or received_at > previous[0]:
+            committed[part] = (received_at, marker)
+    return committed
+
+
+def _lake_evidence(
+    root: Path, paths: list[str], max_age_hours: float, now: datetime,
+    manifest_cache: dict[Path, dict[Path, tuple[datetime, Path]]],
+) -> dict[str, Any]:
+    """Measure ingest freshness only for matched, safely committed Bronze parts.
+
+    File modification times are diagnostics. This does not check provider
+    event_time freshness or reconcile checksums/records.
+    """
+    files: dict[Path, Path] = {}
+    for pattern in paths:
+        if not _safe_pattern(pattern):
+            continue
+        for candidate in root.glob(pattern):
+            if not _safe_evidence_file(root, candidate):
+                continue
+            bronze = next((parent for parent in candidate.parents if parent.name == "bronze"), None)
+            if bronze is not None and bronze.parent.is_relative_to(root):
+                files[candidate] = bronze.parent
+    eligible: dict[Path, tuple[datetime, Path]] = {}
+    for lake_root in set(files.values()):
+        if lake_root not in manifest_cache:
+            manifest_cache[lake_root] = _committed_ingest_times(root, lake_root, now)
+        eligible.update({part: entry for part, entry in manifest_cache[lake_root].items() if part in files})
+    evidence: dict[str, Any] = {
+        "status": "missing", "path": None, "modified_at": None,
+        "received_at": None, "manifest_path": None, "age_hours": None,
+        "age_basis": "manifest_received_at", "max_age_hours": max_age_hours,
+        "matched_files": len(files), "committed_files": len(eligible),
+    }
+    if eligible:
+        newest = max(eligible, key=lambda part: eligible[part][0])
+        received_at, marker = eligible[newest]
+        age_hours = (now - received_at).total_seconds() / 3600
+        evidence.update({
+            "status": "fresh" if age_hours <= max_age_hours else "stale",
+            "path": newest.relative_to(root).as_posix(),
+            "modified_at": datetime.fromtimestamp(newest.stat().st_mtime, timezone.utc).isoformat(),
+            "received_at": received_at.isoformat(),
+            "manifest_path": marker.relative_to(root).as_posix(),
+            "age_hours": round(age_hours, 1),
+        })
+    return evidence
 
 
 def _read_crontab() -> tuple[str, str]:
@@ -464,6 +565,7 @@ def build_report(
         crontab_status = crontab_status or "provided"
 
     products: list[dict[str, Any]] = []
+    manifest_cache: dict[Path, dict[Path, tuple[datetime, Path]]] = {}
     source_matrix: list[dict[str, Any]] = []
     gaps: list[dict[str, Any]] = []
     priority_rank = {"P0": 0, "P1": 1, "P2": 2}
@@ -549,11 +651,12 @@ def build_report(
         for dataset in lake_cfg.get("datasets", []):
             if not isinstance(dataset, dict):
                 continue
-            evidence = _evidence(
+            evidence = _lake_evidence(
                 root,
                 [str(path) for path in dataset.get("paths", [])],
                 float(dataset.get("max_age_hours", 1)),
                 now,
+                manifest_cache,
             )
             lake_datasets.append({"id": dataset.get("id"), **evidence})
         lake_status = _aggregate_evidence(lake_datasets, required=bool(lake_cfg.get("required", True)))
