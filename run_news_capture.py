@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / "infra" / "scripts"
 NEWS_REPO = (
     ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping"
+    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping"
 )
 NEWS_COLLECTOR = NEWS_REPO / "scripts" / "run_feeds.py"
 NEWS_CAPTURE_DIR = NEWS_REPO / "data" / "exported"

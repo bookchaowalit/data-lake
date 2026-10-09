@@ -21,17 +21,17 @@ PRODUCTS = (
     {
         "name": "book-crypto-data",
         "package": "book_crypto",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data",
+        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data",
     },
     {
         "name": "book-stock-data",
         "package": "book_stock",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data",
+        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data",
     },
     {
         "name": "book-fx-data",
         "package": "book_fx",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data",
+        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data",
     },
 )
 

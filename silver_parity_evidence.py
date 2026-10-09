@@ -28,9 +28,9 @@ from data_lake.silver import SilverProductContract, transform_bronze_to_silver  
 
 
 PRODUCT_ROOTS = {
-    "crypto": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-crypto-data",
-    "stock": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-stock-data",
-    "fx": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-fx-data",
+    "crypto": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data",
+    "stock": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data",
+    "fx": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data",
 }
 
 CRYPTO_SAMPLE = {

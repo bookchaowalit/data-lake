@@ -53,7 +53,7 @@ class SeoCapture:
 
     @property
     def workspace(self) -> Path:
-        return OWNER_ROOT / "book-products/book-seo-data"
+        return OWNER_ROOT / "private/book-products/book-seo-data"
 
     @property
     def output_dir(self) -> Path:

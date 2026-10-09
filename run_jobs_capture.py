@@ -29,8 +29,8 @@ from typing import Any, Iterator, Sequence
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / "infra" / "scripts"
 OWNER_ROOT = ROOT / "projects/product/engineering/book-dev/github/bookchaowalit"
-JOB_SCRAPING = OWNER_ROOT / "book-apps/tools/book-job-scraping"
-JOB_DATA = OWNER_ROOT / "book-apps/tools/book-job-data"
+JOB_SCRAPING = OWNER_ROOT / "public/book-apps/tools/book-job-scraping"
+JOB_DATA = OWNER_ROOT / "public/book-apps/tools/book-job-data"
 DEFAULT_LAKE_URI = str(ROOT / "data" / "lake-local" / "scraping-captures-v2")
 DEFAULT_LOCK_PATH = ROOT / "data" / "jobs-feeds.lock"
 DEFAULT_LOG_DIR = ROOT / "data" / "logs" / "jobs-capture"

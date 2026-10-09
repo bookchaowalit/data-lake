@@ -31,7 +31,7 @@ from data_lake.ingest import ingest_payload  # noqa: E402
 
 SOURCE_ROOT = (
     ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools"
+    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools"
     / "book-job-scraping/data/exported"
 )
 SOURCE_NAME = "book-discovery-data"

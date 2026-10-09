@@ -44,16 +44,16 @@ class ProductRuntime:
 
 
 PRODUCTS: tuple[ProductRuntime, ...] = (
-    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101, "book-products/book-crypto-data"),
-    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102, "book-products/book-stock-data"),
-    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103, "book-products/book-fx-data"),
-    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104, "book-products/book-defi-data"),
-    ProductRuntime("flights", "book-flight-data", "book_flight.api", 8105, "book-products/book-flight-data"),
-    ProductRuntime("seo", "book-seo-data", "book_seo.api", 8106, "book-products/book-seo-data"),
-    ProductRuntime("ai_tools", "book-ai-tools-data", "book_ai_tools.api", 8107, "book-ai/book-ai-tools-data"),
-    ProductRuntime("news", "book-news-scraping", "news_data.api", 8108, "book-apps/tools/book-news-scraping"),
-    ProductRuntime("discovery", "book-discovery-data", "discovery_data.api", 8110, "book-apps/tools/book-discovery-data"),
-    ProductRuntime("jobs", "book-job-data", "book_job_data.api", 8109, "book-apps/tools/book-job-data"),
+    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101, "public/book-products/book-crypto-data"),
+    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102, "public/book-products/book-stock-data"),
+    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103, "public/book-products/book-fx-data"),
+    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104, "private/book-products/book-defi-data"),
+    ProductRuntime("flights", "book-flight-data", "book_flight.api", 8105, "private/book-products/book-flight-data"),
+    ProductRuntime("seo", "book-seo-data", "book_seo.api", 8106, "private/book-products/book-seo-data"),
+    ProductRuntime("ai_tools", "book-ai-tools-data", "book_ai_tools.api", 8107, "private/book-ai/book-ai-tools-data"),
+    ProductRuntime("news", "book-news-scraping", "news_data.api", 8108, "public/book-apps/tools/book-news-scraping"),
+    ProductRuntime("discovery", "book-discovery-data", "discovery_data.api", 8110, "public/book-apps/tools/book-discovery-data"),
+    ProductRuntime("jobs", "book-job-data", "book_job_data.api", 8109, "public/book-apps/tools/book-job-data"),
 )
 
 
@@ -63,8 +63,12 @@ def product_workspace(product: ProductRuntime) -> Path:
     if product.relative_path:
         return owner_root / product.relative_path
     # Keep compatibility for callers constructing ProductRuntime with the
-    # original fields only.
-    return owner_root / "book-apps/tools" / product.repository
+    # original fields only; repositories sit under a visibility folder.
+    for visibility in ("private", "public"):
+        candidate = owner_root / visibility / "book-apps/tools" / product.repository
+        if candidate.exists():
+            return candidate
+    return owner_root / "private/book-apps/tools" / product.repository
 
 
 def select_products(values: Iterable[str] | None = None) -> tuple[ProductRuntime, ...]:

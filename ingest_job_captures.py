@@ -17,7 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 JOB_REPOSITORY = (
     ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-data"
+    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data"
 )
 if str(JOB_REPOSITORY / "src") not in sys.path:
     sys.path.insert(0, str(JOB_REPOSITORY / "src"))
@@ -51,7 +51,7 @@ def main(argv: list[str] | None = None) -> int:
         # collection-only.
         career_capture = (
             ROOT
-            / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/career_postings.csv"
+            / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv"
         )
         if career_capture.is_file() and career_capture.resolve() not in inputs:
             inputs.append(career_capture.resolve())
