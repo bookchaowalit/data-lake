@@ -15,7 +15,7 @@ from scheduler_contract_utils import require_bash
 ROOT = Path(__file__).resolve().parents[3]
 SETUP_CRON = (
     ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-news-scraping/setup_cron.sh"
+    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/setup_cron.sh"
 )
 
 

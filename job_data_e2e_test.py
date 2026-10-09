@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[3]
 PRODUCT = Path(
     os.environ.get(
         "BOOK_JOB_DATA_ROOT",
-        "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-data",
+        "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data",
     )
 )
 if not PRODUCT.is_absolute():

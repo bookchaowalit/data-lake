@@ -21,7 +21,7 @@ class JobCaptureCommandTests(unittest.TestCase):
             fixture_root = Path(directory)
             capture_dir = fixture_root / (
                 "projects/product/engineering/book-dev/github/bookchaowalit/"
-                "book-apps/tools/book-job-scraping/data"
+                "public/book-apps/tools/book-job-scraping/data"
             )
             capture_dir.mkdir(parents=True)
             capture = capture_dir / "job_postings.csv"
@@ -40,11 +40,11 @@ class JobCaptureCommandTests(unittest.TestCase):
                 )
         args = owned_main.call_args.args[0]
         self.assertIn(
-            "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/job_postings.csv",
+            "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv",
             args,
         )
         self.assertIn(
-            "projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-job-scraping/data/career_postings.csv",
+            "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv",
             args,
         )
         self.assertNotIn(str(capture), args)
