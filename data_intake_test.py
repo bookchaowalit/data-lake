@@ -16,13 +16,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 SCHEMA = ROOT / "infra" / "database" / "schema.sql"
 CLI = ROOT / "infra" / "scripts" / "cli" / "data-intake-cli.py"
+RUNNER = ROOT / "infra" / "tests" / "support" / "run_with_sqlite_store.py"
 
 
 def run_cli(db_path: Path, args: list[str], *, expect_ok: bool = True) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["SOLO_EMPIRE_DB_PATH"] = str(db_path)
+    env["EMPIRE_CLIENT_CONFIG"] = "/nonexistent"
     result = subprocess.run(
-        [sys.executable, str(CLI), *args],
+        [sys.executable, str(RUNNER), str(CLI), *args],
         cwd=ROOT,
         env=env,
         capture_output=True,
