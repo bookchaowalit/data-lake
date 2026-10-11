@@ -27,16 +27,7 @@ from typing import Any, Iterator, Sequence
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / "infra" / "scripts"
-NEWS_REPO = (
-    ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping"
-)
-NEWS_COLLECTOR = NEWS_REPO / "scripts" / "run_feeds.py"
-NEWS_CAPTURE_DIR = NEWS_REPO / "data" / "exported"
 DEFAULT_LAKE_URI = str(ROOT / "data" / "lake-local" / "scraping-captures-v2")
-# Share the lock with the domain-owned legacy cron entry so an eventual
-# scheduler migration cannot run the collector twice at the same time.
-DEFAULT_LOCK_PATH = NEWS_REPO / "data" / "news-feeds.lock"
 
 if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
@@ -49,6 +40,14 @@ from data_lake.ingest_scraping_captures import (  # noqa: E402
     ingest_capture,
 )
 from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
+from data_lake.workspace import OWNER_ROOT, WORKSPACE  # noqa: E402
+
+NEWS_REPO = OWNER_ROOT / "public/book-apps/tools/book-news-scraping"
+NEWS_COLLECTOR = NEWS_REPO / "scripts" / "run_feeds.py"
+NEWS_CAPTURE_DIR = NEWS_REPO / "data" / "exported"
+# Share the lock with the domain-owned legacy cron entry so an eventual
+# scheduler migration cannot run the collector twice at the same time.
+DEFAULT_LOCK_PATH = NEWS_REPO / "data" / "news-feeds.lock"
 
 
 NEWS_CAPTURES: tuple[CaptureSpec, ...] = tuple(
@@ -176,7 +175,7 @@ def _run_collector(*, limit: int, timeout_seconds: float) -> None:
 
 
 def _read_capture_bytes(spec: CaptureSpec) -> bytes:
-    path = ROOT / spec.path
+    path = WORKSPACE / spec.path
     if not path.is_file():
         raise NewsCycleError("capture_missing")
     try:
@@ -217,7 +216,7 @@ def _history_baselines() -> dict[str, bytes]:
     for spec in NEWS_CAPTURES:
         if not spec.history:
             continue
-        path = ROOT / spec.path
+        path = WORKSPACE / spec.path
         if not path.is_file():
             baselines[spec.path] = b""
             continue

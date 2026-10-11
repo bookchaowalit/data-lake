@@ -1,0 +1,75 @@
+# Technology-discovery data contract. This is additive to the frozen v2
+# seven-product map and is intentionally separate from job.v1 and opportunity
+# synthesis.
+contract_id: discovery-data-contract-v1
+status: active
+source: book-discovery-data
+domain: discovery
+schema_version: discovery.v1
+port: 8110
+producer:
+  repository: book-job-scraping
+  boundary: file_capture_only
+  allowed_inputs:
+    - data/exported/github_trending.csv
+    - data/exported/github_trending_history.csv
+    - data/exported/hackernews_top.csv
+    - data/exported/hackernews_history.csv
+    - data/exported/devto_articles.csv
+    - data/exported/devto_history.csv
+    - data/exported/producthunt_top.csv
+    - data/exported/producthunt_history.csv
+  forbidden:
+    - backend_push
+    - external_writes
+    - paid_provider_fallback
+datasets:
+  - technology_signals
+  - technology_signals_history
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - GitHub public repository search API
+    - Hacker News public Firebase and Algolia APIs
+    - DEV Community public Articles API
+    - Product Hunt public Atom feed
+  attribution_required: true
+  source_bodies: private_landing_only
+identity:
+  fields:
+    - source
+    - signal_id
+  separator: '|'
+  source_record_id: "<source>|<signal_id>"
+normalized_fields:
+  - signal_id
+  - source
+  - signal_kind
+  - title
+  - canonical_url
+  - description
+  - publisher
+  - source_url
+  - observed_at
+  - captured_at
+  - capture_kind
+  - record_kind
+  - attribution_required
+  - source_columns
+quality:
+  required: [id, signal_id, source, title, captured_at, canonical_url]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_captured_at_per_source_record_id
+storage:
+  landing: exact_capture_bytes
+  bronze: parquet
+  query: duckdb
+  csv: input_capture_only
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  api_methods: [GET]
+  refresh_default_status: 403
+  forbidden_sources: [book-job-scraping_csv]
+  allowed_consumers: [research, technology-watch, portfolio-planning]

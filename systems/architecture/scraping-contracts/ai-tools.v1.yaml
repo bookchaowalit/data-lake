@@ -1,0 +1,65 @@
+contract_id: ai-tools.v1
+status: draft
+collection_approval: pending_operator_approval
+not_yet_approved_for_collection: true
+source: book-ai-tools-data
+domain: ai-tools
+schema_version: ai_tools.v1
+record_layer: raw_csv_capture
+producer:
+  repository: book-ai-tools-data
+  boundary: file_capture_only
+  allowed_inputs:
+    - data/exported/ai_tools.csv
+    - data/exported/ai_tools_history.csv
+  forbidden:
+    - live_collection_without_source_approval
+    - external_writes
+    - credential_storage
+datasets:
+  - ai_tools
+  - ai_tools_history
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - Futurepedia public directory pages (pending terms confirmation)
+  terms_status: pending_operator_approval
+  storage_rights: pending_operator_approval
+  reuse: pending_operator_approval
+  attribution_required: true
+  source_url_required: true
+identity:
+  fields: [source, url]
+  separator: "|"
+  source_record_id: "<source>|<url>"
+  history_fields: [source, url, observed_at]
+record_fields:
+  - canonical_url
+  - url
+  - name
+  - vendor
+  - category
+  - pricing
+  - description
+  - source
+  - provider
+  - upvotes
+  - tags
+  - opportunity_tags
+  - observed_at
+  - scraped_at
+quality:
+  required: [source, url, name, observed_at]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_observed_at_per_source_record_id
+storage:
+  landing: exact_capture_bytes_after_approval
+  bronze: parquet
+  query: duckdb
+  retention: pending_operator_approval
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  allowed_consumers: [technology-watch, solo-empire-insights]
+  republishing: pending_operator_approval

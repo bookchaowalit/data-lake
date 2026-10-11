@@ -11,11 +11,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
+# Product repositories live in the Solo Empire workspace, not in this repository.
+ROOT = Path(os.environ.get("SOLO_EMPIRE_ROOT") or Path.home() / "solo-empire").expanduser()
 
 PRODUCTS = (
     {

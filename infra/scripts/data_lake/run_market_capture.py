@@ -27,7 +27,6 @@ from typing import Any, Iterator, Sequence
 
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPTS = ROOT / "infra" / "scripts"
-OWNER_ROOT = ROOT / "projects/product/engineering/book-dev/github/bookchaowalit"
 DEFAULT_LAKE_URI = str(ROOT / "data" / "lake-local" / "scraping-captures-v2")
 DEFAULT_LOCK_PATH = ROOT / "data" / "market-feeds.lock"
 DEFAULT_LOG_DIR = ROOT / "data" / "logs" / "market-capture"
@@ -37,6 +36,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 
 @dataclass(frozen=True)

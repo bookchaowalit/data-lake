@@ -1,0 +1,187 @@
+schema_version: solo-empire.scraping-source-registry-snapshot.v1
+kind: public-source-registry-snapshot
+owner: data-product-owner
+provenance:
+  repository: bookchaowalit/book-job-scraping
+  local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping
+  commit: 960012276311f4c7c77b8555b4208880ac45cec1
+  path: config/source_coverage.yaml
+  projection_fields:
+  - job
+  - business
+  - source
+  - channel
+  - schedule
+  - status
+  - owner_repository
+policy:
+  metadata_only: true
+  live_readiness: unknown_without_runtime_registry
+  missing_required_jobs: owned_inventory_gap_not_registered_source
+  update_contract:
+  - ต้นฉบับ metadata เป็นของ book-job-scraping/config/source_coverage.yaml; สำเนาที่ติดตามใน repo หลักใช้ตรวจ metadata เมื่อไม่มี checkout ของเจ้าของ
+  - ตรวจว่า checkout ของเจ้าของไม่มีการแก้ค้าง แล้วอ่าน config/source_coverage.yaml ที่ commit ระบุชัดเจนด้วย git show; ห้ามคัดลอก capture payloads, credentials, URL query strings หรือ environment files
+  - คัดลอกเฉพาะ provenance.projection_fields โดยคง declared statuses แล้วอัปเดต provenance.commit และรัน scraping_coverage_test.py รวมการตรวจ parity กับ commit ที่ระบุ
+  - งานที่ต้องการแต่ยังไม่มีในทะเบียนให้คง inventory_gap ใน requirements และ next_action ของเจ้าของไว้; เพิ่ม source rows เมื่อเจ้าของลงทะเบียนแล้วเท่านั้น
+  - เมื่อ runtime_path มีไฟล์ให้ใช้ metadata ที่เจ้าของประกาศ; ไฟล์ malformed ต้องแจ้ง error ส่วนสถานะ active/migrated ใน snapshot ต้องถือว่า readiness ยัง unknown
+sources:
+- job: career_postings
+  business: jobs
+  source: Canonical, Appier, PayPay public Greenhouse boards
+  channel: api
+  schedule: 0 */6 * * *
+  status: active
+- job: ddproperty_condos
+  business: property
+  source: DDproperty rental listings
+  channel: scrape
+  schedule: 0 8 * * *
+  status: blocked
+  owner_repository: book-property-scraping
+- job: ennxo_condo_sale
+  business: property
+  source: ENNXO public condo sale listings
+  channel: scrape
+  schedule: 0 9 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: propertyhub_condo_rent
+  business: property
+  source: PropertyHub public condo-rent listings
+  channel: scrape
+  schedule: 0 10 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: livinginsider_condo_rent
+  business: property
+  source: LivingInsider public condo-rent listings
+  channel: scrape
+  schedule: 0 11 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: zmyhome_condo_rent
+  business: property
+  source: ZmyHome public condo-rent listings
+  channel: scrape
+  schedule: 0 12 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: tgcondo_condo_rent
+  business: property
+  source: TG Condo official public condo-rent RSS
+  channel: rss
+  schedule: 0 */6 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: property_social_leads
+  business: property
+  source: Publicly indexed Facebook, Instagram, TikTok, and LINE property pages
+  channel: api
+  schedule: 0 */6 * * *
+  status: planned
+  owner_repository: book-property-scraping
+- job: crypto_prices
+  business: finance
+  source: CoinGecko
+  channel: api
+  schedule: 0 */4 * * *
+  status: migrated
+  owner_repository: book-crypto-data
+- job: exchange_rates
+  business: finance
+  source: Frankfurter
+  channel: api
+  schedule: 0 */6 * * *
+  status: migrated
+  owner_repository: book-fx-data
+- job: github_trending
+  business: discovery
+  source: GitHub repository search
+  channel: api
+  schedule: 0 10 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: hackernews
+  business: discovery
+  source: Hacker News Firebase and Algolia APIs
+  channel: api
+  schedule: 0 9 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: devto_articles
+  business: discovery
+  source: Dev.to Articles API
+  channel: api
+  schedule: 0 10 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: producthunt_top
+  business: discovery
+  source: Product Hunt Atom feed
+  channel: rss
+  schedule: 0 11 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: property_listings
+  business: property
+  source: DDproperty sale listings
+  channel: scrape
+  schedule: 0 9 * * *
+  status: active
+  owner_repository: book-property-scraping
+- job: seo_rankings
+  business: marketing
+  source: Owned public-page provenance
+  channel: scrape
+  schedule: 0 8 * * *
+  status: migrated
+  owner_repository: book-seo-data
+- job: job_postings
+  business: jobs
+  source: Multi-board job postings
+  channel: hybrid
+  schedule: 0 */6 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: stock_prices
+  business: finance
+  source: Yahoo Finance chart API
+  channel: api
+  schedule: 0 8 * * *
+  status: migrated
+  owner_repository: book-stock-data
+- job: ai_tools
+  business: ai
+  source: Futurepedia AI Tools directory
+  channel: scrape
+  schedule: 0 11 * * *
+  status: migrated
+  owner_repository: book-ai-tools-data
+- job: defi_yields
+  business: finance
+  source: DefiLlama pools API
+  channel: api
+  schedule: 0 7 * * *
+  status: migrated
+  owner_repository: book-defi-data
+- job: flight_prices
+  business: travel
+  source: Kiwi Tequila flight search API
+  channel: api
+  schedule: 0 7 * * 1
+  status: blocked
+  owner_repository: book-flight-data
+- job: job_match_filter
+  business: jobs
+  source: Local job matching stage
+  channel: local
+  schedule: 0 */6 * * *
+  status: active
+  owner_repository: book-job-scraping
+- job: scraper_dashboard
+  business: operations
+  source: Local collection health aggregation
+  channel: local
+  schedule: 15 8,11,20 * * *
+  status: active
+  owner_repository: book-job-scraping

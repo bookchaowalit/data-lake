@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Private discovery matching profile v1",
+  "description": "Minimal self-declared facts for conservative opportunity matching; do not put identity, credentials, financial account data or application answers here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_version", "country", "study_level", "student_status", "applicant_type", "startup_stage", "has_legal_entity"],
+  "properties": {
+    "profile_version": {"const": "discovery.profile.v1"},
+    "country": {"type": ["string", "null"], "pattern": "^[A-Z]{2}$"},
+    "study_level": {"enum": ["undergraduate", "postgraduate", "vocational", "short-course", "unknown", null]},
+    "student_status": {"enum": ["verified", "unverified", "not_student", "unknown", null]},
+    "applicant_type": {"enum": ["individual", "organization", "unknown", null]},
+    "startup_stage": {"enum": ["idea", "pre-seed", "seed", "growth", "any", "unknown", null]},
+    "has_legal_entity": {"type": ["boolean", "null"]},
+    "beneficiary_groups": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true, "maxItems": 20}
+  }
+}

@@ -1,0 +1,703 @@
+schema_version: solo-empire.scraping-data-coverage.v1
+kind: scraping-data-requirements
+updated: 2026-09-14
+owner: data-product-owner
+
+scope:
+  objective: Evidence-backed public-source collection for portfolio decisions and governed data products.
+  boundary: Public APIs, RSS, CLI/export, and bounded website acquisition only; private operational integrations are excluded.
+  acquisition_order: [api, cli, rss, scrape]
+  percentage_rule: End-to-end coverage requires ready collection, documented permission, an active schedule when declared, fresh capture, fresh lake evidence, and a versioned consumer contract.
+
+source_registry:
+  path: systems/ai-data/scraping-source-registry.snapshot.yaml
+  runtime_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/config/source_coverage.yaml
+
+excluded_ingress:
+  - id: gmail
+    access: Official Gmail API with user OAuth and lake-first ingest
+    reason: Private communications must never be collected by public web scraping.
+  - id: calendar
+    access: Official Google Calendar API or owner export
+    reason: Calendar data is private operational data with an explicit account boundary.
+  - id: tasks
+    access: Official Todoist, Jira, or Notion API/CLI
+    reason: Mutable task state requires identity, audit, and conflict handling.
+  - id: finance-private
+    access: Owner-provided files or approved provider APIs followed by human review
+    reason: Transactions and account evidence are private and must not be inferred from public pages.
+  - id: analytics
+    access: Search Console, GA4, Ahrefs, or first-party analytics exports/APIs
+    reason: Owned performance data requires authenticated provider access.
+  - id: customer-research
+    access: Permission-first interviews, referrals, and approved research notes
+    reason: Contact and interview evidence must not be harvested from personal profiles.
+
+products:
+  - id: jobs
+    name: Jobs and freelance discovery
+    domain: jobs
+    priority: P0
+    required: true
+    decision: Prioritize current roles and projects that match skills, location, timezone, and evidence.
+    owner: book-job-data
+    consumers: [job-client, opportunity-backlog, dashboard-leads, book-sales-jobsdb]
+    grain: One canonical job posting or derived match per source record.
+    retention: operational-plus-history
+    permission:
+      status: bounded
+      classification: public_source_with_terms
+      basis: Public job APIs and bounded public-board reads with attribution and rate limits.
+    cron_tags: [book-scraping-scheduler]
+    sources:
+      - job: job_postings
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv
+          max_age_hours: 8
+      - job: career_postings
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv
+          max_age_hours: 8
+      - job: job_match_filter
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/matched_jobs.csv
+          max_age_hours: 30
+    lake:
+      required: true
+      datasets:
+        - id: job_postings
+          paths:
+            - data/lake*/**/bronze/domain=jobs/dataset=job_postings/schema_version=*/ingest_date=*/source=book-job-data/*.parquet
+          max_age_hours: 8
+        - id: job_matches
+          paths:
+            - data/lake*/**/bronze/domain=jobs/dataset=job_matches/schema_version=*/ingest_date=*/source=book-job-data/*.parquet
+          max_age_hours: 30
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/job-data-contract-v1.yaml
+      schema_version: job.v1
+      api_port: 8109
+      api_mode: on_demand
+    next_action: Keep the parent run_jobs_capture.py slice bounded to the four free APIs; install the operator-gated book-scraping-scheduler only after provider controls are approved, then use --require-job-readiness before starting consumers and block on reconciliation or freshness alerts.
+
+  - id: discovery
+    name: Technology and product discovery
+    domain: discovery
+    priority: P1
+    required: true
+    decision: Detect relevant developer, product, and technology signals for research and portfolio planning.
+    owner: data-product-owner
+    consumers: [research, technology-watch, portfolio-planning]
+    grain: One attributed repository, story, article, or product signal.
+    retention: evidence
+    permission:
+      status: bounded
+      classification: public_source_with_terms
+      basis: Public GitHub, Hacker News, Dev.to APIs and Product Hunt feed with source attribution.
+    cron_tags: [book-scraping-scheduler]
+    sources:
+      - job: github_trending
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/github_trending.csv
+          max_age_hours: 36
+      - job: hackernews
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/hackernews_top.csv
+          max_age_hours: 36
+      - job: devto_articles
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/devto_articles.csv
+          max_age_hours: 36
+      - job: producthunt_top
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/producthunt_top.csv
+          max_age_hours: 36
+    lake:
+      required: true
+      datasets:
+        - id: technology_signals
+          paths:
+            - data/lake*/**/bronze/domain=discovery/dataset=technology_signals/schema_version=*/ingest_date=*/source=book-discovery-data/*.parquet
+          max_age_hours: 36
+        - id: technology_signals_history
+          paths:
+            - data/lake*/**/bronze/domain=discovery/dataset=technology_signals_history/schema_version=*/ingest_date=*/source=book-discovery-data/*.parquet
+          max_age_hours: 192
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/discovery-data-contract-v1.yaml
+      schema_version: discovery.v1
+      api_port: 8110
+      api_mode: on_demand
+    next_action: Keep the four approved technology captures replayed into Bronze and served through the read-only discovery.v1 API for research and technology-watch; add a parent schedule only after book-discovery-data source/release evidence is restored, and do not read scraper CSVs from consumers.
+
+  - id: property
+    name: Property listing and price intelligence
+    domain: property
+    priority: P0
+    required: true
+    decision: Compare trustworthy sale and rental listings by location, type, and price movement.
+    owner: book-property-scraping
+    consumers: [real-estate-research, opportunity-analysis]
+    grain: One canonical listing snapshot from an approved property source.
+    retention: operational-plus-history
+    permission:
+      status: conditional
+      classification: public_source_with_terms
+      basis: Direct DDproperty access is challenged; fallback search-derived rows are not equivalent to verified listing data.
+    cron_tags: [book-scraping-scheduler]
+    sources:
+      - job: property_listings
+        quality_status: degraded
+        quality_note: Direct DDproperty requests return 403 and the current output is search-fallback evidence.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_listings.csv
+          max_age_hours: 36
+      - job: ddproperty_condos
+        quality_status: blocked
+        quality_note: Parser exists but live collection is blocked by a Cloudflare JavaScript challenge.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/ddproperty_condos.csv
+          max_age_hours: 36
+      - job: ennxo_condo_sale
+        quality_status: planned
+        quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_ennxo_listings.csv
+          max_age_hours: 36
+      - job: propertyhub_condo_rent
+        quality_status: planned
+        quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_propertyhub_listings.csv
+          max_age_hours: 36
+      - job: livinginsider_condo_rent
+        quality_status: planned
+        quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_livinginsider_listings.csv
+          max_age_hours: 36
+      - job: zmyhome_condo_rent
+        quality_status: planned
+        quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_zmyhome_listings.csv
+          max_age_hours: 36
+      - job: property_social_leads
+        quality_status: conditional
+        quality_note: Public search-index metadata only via the official Brave Search API; persisted results require an API plan with explicit storage rights, and every contact/co-agent signal requires human review.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_social_leads.csv
+          max_age_hours: 36
+      - job: tgcondo_condo_rent
+        quality_status: conditional
+        quality_note: Public RSS listing metadata is implemented but scheduling remains disabled until source terms, raw-result retention, and any public contact storage basis are documented.
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/tgcondo_condo_rent.csv
+          max_age_hours: 36
+    lake:
+      required: true
+      datasets:
+        - id: property_listings
+          paths:
+            - data/lake*/**/bronze/domain=property/dataset=property_listings/schema_version=*/ingest_date=*/source=book-property-scraping/*.parquet
+          max_age_hours: 36
+        - id: property_social_leads
+          paths:
+            - data/lake*/**/bronze/domain=property/dataset=property_social_leads/schema_version=*/ingest_date=*/source=book-property-scraping/*.parquet
+          max_age_hours: 36
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/scraping-contracts/property.v1.yaml
+      schema_version: property.v1
+      api_mode: on_demand
+    next_action: Keep DDproperty fallback marked degraded; obtain Brave Search API storage rights, document platform terms/PDPA purpose and retention, then run bounded public social-index discovery and publish property.v1 only after human-reviewed contact/co-agent quality thresholds.
+
+  - id: news
+    name: Business and technology news
+    domain: news
+    priority: P1
+    required: true
+    decision: Maintain fresh attributed business and technology news inputs for research and briefings.
+    owner: book-news-scraping
+    consumers: [research, briefings, content-planning]
+    grain: One canonical attributed article from an approved feed.
+    retention: evidence
+    permission:
+      status: approved
+      classification: public_source_with_terms
+      basis: Publisher-provided RSS or Atom feeds with canonical URLs and attribution.
+    cron_tags: [book-news-scraping-feeds]
+    sources:
+      - job: notebookspec_tech
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/notebookspec_tech.csv
+          max_age_hours: 8
+      - job: matichon_news
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/matichon_news.csv
+          max_age_hours: 8
+      - job: thai_business_news
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/thai_business_news.csv
+          max_age_hours: 8
+      - job: thai_tech_news
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/thai_tech_news.csv
+          max_age_hours: 8
+    lake:
+      required: true
+      datasets:
+        - id: articles
+          paths:
+            - data/lake*/**/bronze/domain=news/dataset=articles/schema_version=*/ingest_date=*/source=book-news-scraping/*.parquet
+          max_age_hours: 8
+        - id: articles_history
+          paths:
+            - data/lake*/**/bronze/domain=news/dataset=articles_history/schema_version=*/ingest_date=*/source=book-news-scraping/*.parquet
+          max_age_hours: 192
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/news-data-contract-v1.yaml
+      schema_version: news.v1
+      api_port: 8108
+      api_mode: on_demand
+    next_action: Keep the approved RSS captures on schedule, replay them into Bronze, then use the read-only news.v1 API for briefings and research; do not read exported CSVs from consumers.
+
+  - id: marketplace
+    name: Marketplace and classified listings
+    domain: marketplace
+    priority: P1
+    required: true
+    decision: Observe bounded price and listing signals for market research without mass harvesting.
+    owner: book-ecommerce-scraping
+    consumers: [market-research, opportunity-analysis]
+    grain: One attributed marketplace listing snapshot.
+    retention: short-lived-operational
+    permission:
+      status: conditional
+      classification: public_source_with_terms
+      basis: Current repository labels marketplace scraping as research/prototype and requires source-term review.
+    cron_tags: [book-ecommerce-scraping-feeds]
+    sources:
+      - job: kaidee_classifieds
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-ecommerce-scraping/data/exported/kaidee_classifieds.csv
+          max_age_hours: 8
+    lake:
+      required: true
+      datasets:
+        - id: marketplace_listings
+          paths:
+            - data/lake*/**/bronze/domain=marketplace/dataset=marketplace_listings/schema_version=*/ingest_date=*/source=book-ecommerce-scraping/*.parquet
+          max_age_hours: 8
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/scraping-contracts/marketplace.v1.yaml
+      schema_version: marketplace.v1
+      api_mode: on_demand
+    next_action: Review the draft marketplace.v1 against source terms, then seek operator approval for bounded volume, retention, and lake ingestion.
+
+  - id: restaurants
+    name: Restaurant and local-business discovery
+    domain: local-business
+    priority: P1
+    required: true
+    decision: Compare attributed restaurant coverage across Bangkok and selected upcountry cities.
+    owner: book-restaurant-scraping
+    consumers: [local-business-research, food-beverage-opportunities]
+    grain: One canonical restaurant listing per location snapshot.
+    retention: operational-plus-history
+    permission:
+      status: conditional
+      classification: public_source_with_terms
+      basis: Bounded public-page research is working, but production reuse requires current source-term confirmation.
+    cron_tags: [book-restaurant-scraping-feeds]
+    sources:
+      - job: wongnai_bangkok
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping/data/exported/wongnai_bangkok.csv
+          max_age_hours: 192
+      - job: wongnai_upcountry
+        inventory_gap: true
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping/data/exported/wongnai_upcountry.csv
+          max_age_hours: 192
+    lake:
+      required: true
+      datasets:
+        - id: restaurant_listings
+          paths:
+            - data/lake*/**/bronze/domain=local-business/dataset=restaurant_listings/schema_version=*/ingest_date=*/source=book-restaurant-scraping/*.parquet
+          max_age_hours: 192
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/scraping-contracts/restaurant.v1.yaml
+      schema_version: restaurant.v1
+      api_mode: on_demand
+    next_action: Review the draft restaurant.v1 against permitted reuse, then seek operator approval for a lake-first scheduled path before downstream consumption.
+
+  - id: crypto
+    name: Crypto market prices
+    domain: finance
+    priority: P1
+    required: true
+    decision: Track a bounded set of current crypto prices for market and opportunity analysis.
+    owner: book-crypto-data
+    consumers: [solo-empire-insights]
+    grain: One asset-price observation per provider timestamp.
+    retention: market-history
+    permission:
+      status: bounded
+      classification: public_source_with_terms
+      basis: CoinGecko free public API with bounded polling and paid providers disabled.
+    cron_tags: [book-crypto-data-feeds]
+    sources:
+      - job: crypto_prices
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data/data/exported/crypto_prices.csv
+          max_age_hours: 6
+    lake:
+      required: true
+      datasets:
+        - id: crypto_prices
+          paths:
+            - data/lake*/**/bronze/domain=market/dataset=crypto_prices/schema_version=*/ingest_date=*/source=book-crypto-data/*.parquet
+          max_age_hours: 6
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: crypto.v1
+      api_port: 8101
+      api_mode: on_demand
+    next_action: Keep the approved parent lake-first crypto schedule on its four-hour cadence and verify fresh Bronze/history reconciliation before enabling API consumers.
+
+  - id: stocks
+    name: Stock market prices
+    domain: finance
+    priority: P1
+    required: true
+    decision: Track a bounded watchlist of equity prices for market and opportunity analysis.
+    owner: book-stock-data
+    consumers: [solo-empire-insights]
+    grain: One ticker-price observation per provider timestamp.
+    retention: market-history
+    permission:
+      status: bounded
+      classification: public_source_with_terms
+      basis: Bounded Yahoo Finance chart endpoint use with attribution and no paid provider fallback.
+    cron_tags: [book-stock-data-feeds]
+    sources:
+      - job: stock_prices
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data/data/exported/stock_prices.csv
+          max_age_hours: 30
+    lake:
+      required: true
+      datasets:
+        - id: stock_prices
+          paths:
+            - data/lake*/**/bronze/domain=market/dataset=stock_prices/schema_version=*/ingest_date=*/source=book-stock-data/*.parquet
+          max_age_hours: 30
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: stock.v1
+      api_port: 8102
+      api_mode: on_demand
+    next_action: Keep the bounded parent lake-first stocks schedule on its daily cadence and verify fresh Bronze/history reconciliation before enabling API consumers.
+
+  - id: fx
+    name: Foreign exchange rates
+    domain: finance
+    priority: P1
+    required: true
+    decision: Track current THB-relevant exchange rates for pricing, travel, and market decisions.
+    owner: book-fx-data
+    consumers: [solo-empire-insights, finance-planning]
+    grain: One currency-pair rate observation per provider date.
+    retention: market-history
+    permission:
+      status: approved
+      classification: public_source_with_terms
+      basis: Frankfurter public API with bounded polling and source attribution.
+    cron_tags: [book-fx-data-feeds]
+    sources:
+      - job: exchange_rates
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data/data/exported/exchange_rates.csv
+          max_age_hours: 8
+    lake:
+      required: true
+      datasets:
+        - id: exchange_rates
+          paths:
+            - data/lake*/**/bronze/domain=market/dataset=exchange_rates/schema_version=*/ingest_date=*/source=book-fx-data/*.parquet
+          max_age_hours: 8
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: fx.v1
+      api_port: 8103
+      api_mode: on_demand
+    next_action: Keep the approved parent lake-first FX schedule on its six-hour cadence and verify fresh Bronze/history reconciliation before enabling API consumers.
+
+  - id: defi
+    name: DeFi yield data
+    domain: finance
+    priority: P1
+    required: true
+    decision: Compare bounded DeFi pool yields with provider timestamps and chain attribution.
+    owner: book-defi-data
+    consumers: [solo-empire-insights]
+    grain: One pool-yield observation per provider timestamp.
+    retention: market-history
+    permission:
+      status: approved
+      classification: public_source_with_terms
+      basis: DefiLlama public pools API with bounded chain coverage and polling.
+    cron_tags: [book-defi-data-feeds]
+    sources:
+      - job: defi_yields
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-defi-data/data/exported/defi_yields.csv
+          max_age_hours: 30
+    lake:
+      required: true
+      datasets:
+        - id: defi_yields
+          paths:
+            - data/lake*/**/bronze/domain=market/dataset=defi_yields/schema_version=*/ingest_date=*/source=book-defi-data/*.parquet
+          max_age_hours: 30
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: defi.v1
+      api_port: 8104
+      api_mode: on_demand
+    next_action: Keep the approved parent lake-first DeFi schedule on its daily cadence and verify Bronze/history reconciliation before enabling API consumers.
+
+  - id: flights
+    name: Flight and route price data
+    domain: travel
+    priority: P2
+    required: true
+    decision: Compare permitted route prices within an explicit query and cost budget.
+    owner: book-flight-data
+    consumers: [travel-planning]
+    grain: One route/itinerary price observation per provider search.
+    retention: short-lived-operational
+    permission:
+      status: blocked
+      classification: public_source_with_terms
+      basis: Provider credential, current free-tier terms, and route-query budget are not approved.
+    cron_tags: [book-flight-data-feeds]
+    sources:
+      - job: flight_prices
+        quality_status: blocked
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-flight-data/data/exported/flight_prices.csv
+          max_age_hours: 192
+    lake:
+      required: true
+      datasets:
+        - id: flight_prices
+          paths:
+            - data/lake*/**/bronze/domain=travel/dataset=flight_prices/schema_version=*/ingest_date=*/source=book-flight-data/*.parquet
+          max_age_hours: 192
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: flight.v1
+      api_port: 8105
+      api_mode: on_demand
+    next_action: Approve one provider and bounded route budget before activating collection; fixtures remain test evidence only.
+
+  - id: seo
+    name: Owned-page SEO provenance
+    domain: marketing
+    priority: P2
+    required: true
+    decision: Verify owned public pages and provenance without claiming free-path SERP rankings.
+    owner: book-seo-data
+    consumers: [seo-research, solo-empire-insights]
+    grain: One owned-page reachability/provenance observation.
+    retention: operational-plus-history
+    permission:
+      status: approved
+      classification: public_source_with_terms
+      basis: Bounded reads of owner-controlled public pages; authenticated analytics remain separate.
+    cron_tags: [book-seo-data-feeds]
+    sources:
+      - job: seo_rankings
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-seo-data/data/exported/seo_rankings.csv
+          max_age_hours: 30
+    lake:
+      required: true
+      datasets:
+        - id: seo_rankings
+          paths:
+            - data/lake*/**/bronze/domain=seo/dataset=seo_rankings/schema_version=*/ingest_date=*/source=book-seo-data/*.parquet
+          max_age_hours: 30
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/data-product-contracts-v2.yaml
+      schema_version: seo.v1
+      api_port: 8106
+      api_mode: on_demand
+    next_action: Keep the approved parent lake-first owned-page SEO schedule on its daily cadence; keep Search Console, GA4, and Ahrefs data on authenticated import paths.
+
+  - id: ai-tools
+    name: AI tool directory intelligence
+    domain: ai
+    priority: P2
+    required: true
+    decision: Maintain attributed AI tool/category signals for technology evaluation.
+    owner: book-ai-tools-data
+    consumers: [technology-watch, solo-empire-insights]
+    grain: One attributed AI tool listing snapshot.
+    retention: evidence
+    permission:
+      status: conditional
+      classification: public_source_with_terms
+      basis: Bounded public directory pages are working; current terms must be confirmed before production reuse.
+    cron_tags: [book-ai-tools-data-feeds]
+    sources:
+      - job: ai_tools
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/book-ai-tools-data/data/exported/ai_tools.csv
+          max_age_hours: 30
+    lake:
+      required: true
+      datasets:
+        - id: ai_tools
+          paths:
+            - data/lake*/**/bronze/domain=ai-tools/dataset=ai_tools/schema_version=*/ingest_date=*/source=book-ai-tools-data/*.parquet
+          max_age_hours: 30
+    delivery:
+      kind: api_and_duckdb
+      contract_path: systems/architecture/scraping-contracts/ai-tools.v1.yaml
+      schema_version: ai_tools.v1
+      api_port: 8107
+      api_mode: on_demand
+    next_action: Review the draft ai-tools.v1 against permitted reuse, then seek operator approval before scheduling the existing lake-first ingest.
+
+  - id: directory
+    name: Directory and business listings
+    domain: directory
+    priority: P1
+    required: true
+    inventory_gap: true
+    decision: Find attributable local business records for bounded market research.
+    owner: book-directory-scraping
+    consumers: [local-business-research, lead-qualification]
+    grain: One canonical public business listing with source provenance.
+    retention: short-lived-operational
+    permission:
+      status: unknown
+      classification: public_source_with_terms
+      basis: No approved source inventory, production contract, or collection schedule is recorded.
+    cron_tags: [book-directory-scraping-feeds]
+    sources: []
+    lake:
+      required: true
+      datasets:
+        - id: business_listings
+          paths:
+            - data/lake*/**/bronze/domain=directory/dataset=business_listings/schema_version=*/ingest_date=*/source=book-directory-scraping/*.parquet
+          max_age_hours: 192
+    delivery:
+      kind: api_or_duckdb
+      contract_path: systems/architecture/scraping-contracts/directory.v1.yaml
+      schema_version: directory.v1
+      api_mode: on_demand
+    next_action: Select an approved official API/export or bounded public source, review the draft directory.v1, and add one focused smoke test before scheduling.
+
+  - id: collection-operations
+    name: Collection health and scheduler visibility
+    domain: operations
+    priority: P0
+    required: false
+    decision: Detect stale or failed collection without treating a scheduler timestamp as data quality.
+    owner: book-job-scraping
+    consumers: [operator]
+    grain: One local collection-health snapshot.
+    retention: operational
+    permission:
+      status: approved
+      classification: internal
+      basis: Local metadata only; no raw source records or credentials are included.
+    cron_tags: [book-scraping-scheduler]
+    sources:
+      - job: scraper_dashboard
+        quality_status: verified
+        capture:
+          paths:
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/briefings/scraper_dashboard.json
+          max_age_hours: 30
+    lake:
+      required: false
+      datasets: []
+    delivery:
+      kind: local_report
+      contract_path: null
+      schema_version: local-ops
+      api_mode: none
+    next_action: Keep the health report read-only and make it consume this coverage audit rather than infer success from scheduler state alone.

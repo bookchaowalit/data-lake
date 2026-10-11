@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake import run_data_product_stack as stack
+from data_lake.workspace import OWNER_ROOT
 from data_lake.ingest_scraping_captures import (
     CAPTURES,
     _deduplicate_exact_records,
@@ -26,6 +27,7 @@ from data_lake.ingest_scraping_captures import (
 
 
 class ScrapingCaptureIngestTests(unittest.TestCase):
+    @unittest.skipUnless(OWNER_ROOT.is_dir(), "product repositories not found under SOLO_EMPIRE_ROOT")
     def test_product_workspaces_resolve_to_declared_book_dev_paths(self) -> None:
         for product in stack.PRODUCTS:
             with self.subTest(product=product.product):
@@ -192,6 +194,7 @@ class ScrapingCaptureIngestTests(unittest.TestCase):
                     stack.start_products([product], lake_uri=directory, log_dir=Path(directory))
                 popen.assert_not_called()
 
+    @unittest.skipUnless(OWNER_ROOT.is_dir(), "product repositories not found under SOLO_EMPIRE_ROOT")
     def test_stack_cleans_up_partial_start_and_overrides_inherited_port(self) -> None:
         child = Mock()
         child.poll.return_value = None

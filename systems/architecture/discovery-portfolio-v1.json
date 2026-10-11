@@ -1,0 +1,664 @@
+{
+  "version": 1,
+  "status": "fourteen-local-source-pilots",
+  "owner": "bookchaowalit",
+  "scope": "Discovery of funding, benefits, earnings, resources and participation programs",
+  "products": [
+    {
+      "id": "book-scholarship-data",
+      "domain": "scholarship",
+      "title": "Scholarships",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-scholarship-data",
+      "schema_version": "scholarship.v1",
+      "categories": [
+        "undergraduate",
+        "postgraduate",
+        "vocational",
+        "short-course",
+        "tuition-waiver"
+      ],
+      "decision": "Find education funding by degree and applicant eligibility.",
+      "boundary": "Degree and tuition awards; research project budgets belong to grant.",
+      "domain_fields": [
+        "study_level",
+        "funding_coverage",
+        "institution",
+        "service_obligation"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "scholarship.v2",
+      "enabled_source_ids": [
+        "chevening-thailand",
+        "uk-undergraduate-student-finance",
+        "uk-16-19-bursary-vocational",
+        "uk-free-courses-short-course",
+        "uk-university-scholarships-tuition-waiver"
+      ],
+      "enabled_category_capabilities": [
+        "undergraduate",
+        "postgraduate",
+        "vocational",
+        "short-course",
+        "tuition-waiver"
+      ]
+    },
+    {
+      "id": "book-grant-data",
+      "domain": "grant",
+      "title": "Project grants",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grant-data",
+      "schema_version": "grant.v1",
+      "categories": [
+        "research",
+        "innovation",
+        "arts-culture",
+        "community",
+        "small-business",
+        "climate"
+      ],
+      "decision": "Find non-equity project funding and its reporting obligations.",
+      "boundary": "Project funding calls; individual tuition goes to scholarship and cohort admission to startup-program.",
+      "domain_fields": [
+        "funding_purpose",
+        "applicant_type",
+        "matching_funds_required",
+        "reporting_obligation"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "grant.v2",
+      "enabled_source_ids": [
+        "govuk-innovation-funding",
+        "depa-digital-startup-fund",
+        "iuk-zevi2-alternative-fuels",
+        "grants-gov-research-opportunities",
+        "creative-europe-culture-calls",
+        "national-lottery-community-funding",
+        "sba-small-business-grants"
+      ],
+      "enabled_category_capabilities": [
+        "research",
+        "innovation",
+        "arts-culture",
+        "community",
+        "small-business",
+        "climate"
+      ]
+    },
+    {
+      "id": "book-startup-program-data",
+      "domain": "startup-program",
+      "title": "Startup programs",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-startup-program-data",
+      "schema_version": "startup_program.v1",
+      "categories": [
+        "accelerator",
+        "incubator",
+        "venture-builder",
+        "founder-residency",
+        "startup-perks"
+      ],
+      "decision": "Compare startup admission, stage requirements, equity and perks.",
+      "boundary": "Cohort or founder membership packages; standalone grants and general coupons have other owners.",
+      "domain_fields": [
+        "startup_stage",
+        "equity_required",
+        "cohort_start",
+        "incorporation_required"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "startup_program.v1",
+      "enabled_source_ids": [
+        "google-startups-accelerator-us",
+        "google-startup-school-incubator",
+        "entrepreneurs-first-venture-builder",
+        "antler-founder-residency",
+        "aws-activate-startup-perks"
+      ],
+      "enabled_category_capabilities": [
+        "accelerator",
+        "incubator",
+        "venture-builder",
+        "founder-residency",
+        "startup-perks"
+      ]
+    },
+    {
+      "id": "book-competition-data",
+      "domain": "competition",
+      "title": "Competitions and prizes",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-competition-data",
+      "schema_version": "competition.v1",
+      "categories": [
+        "hackathon",
+        "innovation-challenge",
+        "creative-contest",
+        "data-science",
+        "entrepreneurship"
+      ],
+      "decision": "Find competitions with relevant deliverables, judging and prize terms.",
+      "boundary": "Ranked contests with judging; acceptance-based task rewards belong to bounty.",
+      "domain_fields": [
+        "judging_criteria",
+        "team_allowed",
+        "submission_format",
+        "ip_terms"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "competition.v1",
+      "enabled_source_ids": [
+        "nasa-space-apps-2026",
+        "cassini-challenges-2026",
+        "nasa-prizes-innovation-challenges",
+        "creative-europe-creative-contests",
+        "drivendata-data-science-competitions"
+      ],
+      "enabled_category_capabilities": [
+        "hackathon",
+        "innovation-challenge",
+        "creative-contest",
+        "data-science",
+        "entrepreneurship"
+      ]
+    },
+    {
+      "id": "book-bounty-data",
+      "domain": "bounty",
+      "title": "Task bounties",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-bounty-data",
+      "schema_version": "bounty.v1",
+      "categories": [
+        "open-source",
+        "security",
+        "documentation",
+        "translation",
+        "community-task"
+      ],
+      "decision": "Find scoped paid tasks with clear acceptance and authorization.",
+      "boundary": "Payment for accepted deliverables; ranked contests and ordinary employment stay separate.",
+      "domain_fields": [
+        "acceptance_criteria",
+        "authorization_scope",
+        "payout_condition",
+        "dispute_process"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "bounty.v1",
+      "enabled_source_ids": [
+        "github-bug-bounty-rules",
+        "up-for-grabs-open-source-tasks",
+        "google-season-of-docs",
+        "mozilla-pontoon-translation",
+        "apache-community-tasks"
+      ],
+      "enabled_category_capabilities": [
+        "open-source",
+        "security",
+        "documentation",
+        "translation",
+        "community-task"
+      ]
+    },
+    {
+      "id": "book-benefit-data",
+      "domain": "benefit",
+      "title": "Public and membership benefits",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-benefit-data",
+      "schema_version": "benefit.v1",
+      "categories": [
+        "public-assistance",
+        "utility-support",
+        "housing-support",
+        "member-benefit",
+        "accessibility",
+        "fee-waiver"
+      ],
+      "decision": "Discover entitlements and support by jurisdiction and eligibility.",
+      "boundary": "Rule-based entitlement programs; marketing promotions belong to deal/freebie.",
+      "domain_fields": [
+        "jurisdiction",
+        "beneficiary_group",
+        "eligibility_evidence",
+        "renewal_rule"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "benefit.v2",
+      "enabled_source_ids": [
+        "govuk-universal-credit",
+        "thaigov-state-welfare-2569",
+        "thaigov-water-support-2569",
+        "govuk-housing-benefit",
+        "nhs-healthcare-travel-member-benefit",
+        "govuk-disabled-students-allowance",
+        "govuk-court-fee-remission"
+      ],
+      "enabled_category_capabilities": [
+        "public-assistance",
+        "utility-support",
+        "housing-support",
+        "member-benefit",
+        "accessibility",
+        "fee-waiver"
+      ]
+    },
+    {
+      "id": "book-freebie-data",
+      "domain": "freebie",
+      "title": "Free goods and credits",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-freebie-data",
+      "schema_version": "freebie.v1",
+      "categories": [
+        "software-license",
+        "cloud-credit",
+        "api-credit",
+        "physical-sample",
+        "digital-asset",
+        "giveaway"
+      ],
+      "decision": "Find zero-price offers with redemption and hidden-cost terms.",
+      "boundary": "Standalone free claims including credits; purchase-required discounts go to deal, catalog free tiers remain free:find.",
+      "domain_fields": [
+        "delivery_kind",
+        "stock_rule",
+        "redemption_steps",
+        "shipping_cost_known"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "freebie.v2",
+      "enabled_source_ids": [
+        "github-student-benefits",
+        "jetbrains-student-pack",
+        "aws-activate-cloud-credits",
+        "google-maps-platform-api-credit",
+        "usps-free-shipping-supplies",
+        "nasa-open-images-digital-assets",
+        "national-geographic-photo-contests"
+      ],
+      "enabled_category_capabilities": [
+        "software-license",
+        "cloud-credit",
+        "api-credit",
+        "physical-sample",
+        "digital-asset",
+        "giveaway"
+      ]
+    },
+    {
+      "id": "book-deal-data",
+      "domain": "deal",
+      "title": "Deals and savings",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-deal-data",
+      "schema_version": "deal.v1",
+      "categories": [
+        "coupon",
+        "cashback",
+        "rebate",
+        "discount",
+        "bundle",
+        "referral-promotion"
+      ],
+      "decision": "Compare conditional savings against required spending and renewal.",
+      "boundary": "Offers requiring purchase or a commercial condition; zero-price claims belong to freebie.",
+      "domain_fields": [
+        "minimum_spend",
+        "discount_basis",
+        "redemption_limit",
+        "purchase_required"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "deal.v1",
+      "enabled_source_ids": [
+        "apple-education-college-offer-2026",
+        "microsoft-education-coupon",
+        "rakuten-cashback",
+        "energystar-rebate-finder",
+        "steam-bundle-offers",
+        "dropbox-referral-program"
+      ],
+      "enabled_category_capabilities": [
+        "coupon",
+        "cashback",
+        "rebate",
+        "discount",
+        "bundle",
+        "referral-promotion"
+      ]
+    },
+    {
+      "id": "book-learning-program-data",
+      "domain": "learning-program",
+      "title": "Learning programs",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-learning-program-data",
+      "schema_version": "learning_program.v1",
+      "categories": [
+        "course",
+        "certification",
+        "bootcamp",
+        "mentorship",
+        "workshop",
+        "apprenticeship-training"
+      ],
+      "decision": "Find learning access and credentials by prerequisites and workload.",
+      "boundary": "Training admissions and learning offers; funding records link to scholarship instead of duplicating it.",
+      "domain_fields": [
+        "learning_format",
+        "prerequisites",
+        "credential",
+        "hours_required"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "learning_program.v1",
+      "enabled_source_ids": [
+        "mit-ocw-course-library",
+        "google-developers-certification",
+        "uk-skills-bootcamps-providers",
+        "google-gear-mentorship",
+        "aws-builder-workshops",
+        "uk-apprenticeships-directory"
+      ],
+      "enabled_category_capabilities": [
+        "course",
+        "certification",
+        "bootcamp",
+        "mentorship",
+        "workshop",
+        "apprenticeship-training"
+      ]
+    },
+    {
+      "id": "book-mobility-program-data",
+      "domain": "mobility-program",
+      "title": "Travel and exchange programs",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-mobility-program-data",
+      "schema_version": "mobility_program.v1",
+      "categories": [
+        "travel-grant",
+        "exchange",
+        "conference-support",
+        "artist-residency",
+        "volunteer-exchange"
+      ],
+      "decision": "Find supported travel and exchanges with destination and coverage terms.",
+      "boundary": "Mobility-specific support; flight prices remain book-flight-data and jobs remain job.v1.",
+      "domain_fields": [
+        "destination_country",
+        "travel_start",
+        "coverage",
+        "visa_support"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "mobility_program.v1",
+      "enabled_source_ids": [
+        "discovereu-autumn-2026",
+        "erasmus-youth-exchanges",
+        "cost-eu-resolve-conference-grants",
+        "culture-moves-europe-residency-hosts",
+        "european-solidarity-corps-volunteering"
+      ],
+      "enabled_category_capabilities": [
+        "travel-grant",
+        "exchange",
+        "conference-support",
+        "artist-residency",
+        "volunteer-exchange"
+      ]
+    },
+    {
+      "id": "book-paid-study-data",
+      "domain": "paid-study",
+      "title": "Paid research participation",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-paid-study-data",
+      "schema_version": "paid_study.v1",
+      "categories": [
+        "user-interview",
+        "usability-test",
+        "survey",
+        "research-panel",
+        "academic-study"
+      ],
+      "decision": "Find compensated participation with screening, time and privacy terms.",
+      "boundary": "Public study listings only; personal screening answers and health records never enter this product.",
+      "domain_fields": [
+        "study_method",
+        "duration_minutes",
+        "screening_required",
+        "consent_and_data_use"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "paid_study.v1",
+      "enabled_source_ids": [
+        "prolific-participants-how-it-works",
+        "respondent-paid-research-participants",
+        "usertesting-paid-contributors",
+        "yougov-panel-surveys",
+        "nih-research-participant-compensation"
+      ],
+      "enabled_category_capabilities": [
+        "user-interview",
+        "usability-test",
+        "survey",
+        "research-panel",
+        "academic-study"
+      ]
+    },
+    {
+      "id": "book-procurement-data",
+      "domain": "procurement",
+      "title": "Procurement and tenders",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-procurement-data",
+      "schema_version": "procurement.v1",
+      "categories": [
+        "rfp",
+        "rfq",
+        "public-tender",
+        "vendor-registration",
+        "framework-agreement"
+      ],
+      "decision": "Find buyer requests with vendor qualification and bid requirements.",
+      "boundary": "Institutional procurement; individual employment and freelance job listings remain job.v1.",
+      "domain_fields": [
+        "buyer_type",
+        "procurement_method",
+        "bid_security_required",
+        "vendor_requirements"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "procurement.v1",
+      "enabled_source_ids": [
+        "contracts-finder-open-tenders"
+      ],
+      "enabled_category_capabilities": [
+        "rfp",
+        "rfq",
+        "public-tender",
+        "vendor-registration",
+        "framework-agreement"
+      ]
+    },
+    {
+      "id": "book-partnership-data",
+      "domain": "partnership",
+      "title": "Commercial partnerships",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-partnership-data",
+      "schema_version": "partnership.v1",
+      "categories": [
+        "affiliate",
+        "reseller",
+        "channel-partner",
+        "distribution",
+        "integration-partner",
+        "licensing"
+      ],
+      "decision": "Compare ongoing commercial partner programs and payout obligations.",
+      "boundary": "Durable commercial relationships; one-off referral promotions belong to deal and creator eligibility to creator-program.",
+      "domain_fields": [
+        "partner_model",
+        "commission_basis",
+        "exclusivity_required",
+        "settlement_terms"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "partnership.v1",
+      "enabled_source_ids": [
+        "stripe-partner-ecosystem",
+        "hubspot-affiliate-program",
+        "microsoft-csp-reseller",
+        "aws-marketplace-channel",
+        "shopify-partner-distribution",
+        "apple-mfi-licensing"
+      ],
+      "enabled_category_capabilities": [
+        "affiliate",
+        "reseller",
+        "channel-partner",
+        "distribution",
+        "integration-partner",
+        "licensing"
+      ]
+    },
+    {
+      "id": "book-creator-program-data",
+      "domain": "creator-program",
+      "title": "Creator and contributor programs",
+      "owner": "bookchaowalit",
+      "status": "local-source-pilot",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-creator-program-data",
+      "schema_version": "creator_program.v1",
+      "categories": [
+        "creator-fund",
+        "ambassador",
+        "sponsorship-program",
+        "open-source-sponsorship",
+        "contributor-program"
+      ],
+      "decision": "Find recurring creator support with audience, deliverable and rights conditions.",
+      "boundary": "Creator-qualified participation; individual project grants and general affiliates remain their own domains.",
+      "domain_fields": [
+        "creator_medium",
+        "audience_requirement",
+        "deliverables",
+        "content_rights"
+      ],
+      "remote_url": null,
+      "last_known_commit": null,
+      "live_sources_enabled": true,
+      "consumer_integration": "local-cli",
+      "live_schema_version": "creator_program.v1",
+      "enabled_source_ids": [
+        "youtube-partner-program",
+        "google-developer-experts",
+        "github-sponsorship-program",
+        "github-sponsors-open-source",
+        "mozilla-contributor-program"
+      ],
+      "enabled_category_capabilities": [
+        "creator-fund",
+        "ambassador",
+        "sponsorship-program",
+        "open-source-sponsorship",
+        "contributor-program"
+      ]
+    }
+  ],
+  "reuse_existing": [
+    {
+      "domain": "jobs-and-freelance",
+      "owner": "book-job-data",
+      "contract": "job.v1"
+    },
+    {
+      "domain": "free-service-catalog",
+      "owner": "infra/scripts/discovery/free_resource.py",
+      "command": "task free:find"
+    },
+    {
+      "domain": "free-saas-catalog",
+      "owner": "infra/scripts/discovery/free_saas_catalog.py",
+      "command": "task free:saas"
+    },
+    {
+      "domain": "flight-prices",
+      "owner": "book-flight-data",
+      "contract": "flight.v1"
+    },
+    {
+      "domain": "product-prices",
+      "owner": "book-ecommerce-scraping",
+      "contract": "existing boundary; verify contract before integration"
+    },
+    {
+      "domain": "property-listings",
+      "owner": "book-property-scraping",
+      "contract": "existing boundary; verify contract before integration"
+    },
+    {
+      "domain": "news-and-business-directories",
+      "owner": "book-news-scraping / book-directory-scraping",
+      "contract": "existing boundaries; verify contracts before integration"
+    }
+  ]
+}

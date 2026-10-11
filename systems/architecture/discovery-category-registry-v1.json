@@ -1,0 +1,716 @@
+{
+  "contract": "discovery.category-registry.v1",
+  "version": 1,
+  "updated": "2026-09-23",
+  "owner": "bookchaowalit",
+  "scope": "Discovery category coverage and source-registration gates; this registry never claims personal eligibility or source truth.",
+  "state_definitions": {
+    "observed-live": "The category appears in a current normalized local capture.",
+    "adapter-capable": "A reviewed enabled source declares deterministic handling, but the current capture has no row for the category.",
+    "source-registration-required": "No reviewed enabled source currently covers the category; network capture must remain disabled until permission and fixtures are reviewed."
+  },
+  "products": [
+    {
+      "product_id": "book-scholarship-data",
+      "domain": "scholarship",
+      "categories": [
+        {
+          "id": "undergraduate",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-undergraduate-student-finance"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "postgraduate",
+          "state": "observed-live",
+          "source_ids": [
+            "chevening-thailand"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "vocational",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-16-19-bursary-vocational"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "short-course",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-free-courses-short-course"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "tuition-waiver",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-university-scholarships-tuition-waiver"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-grant-data",
+      "domain": "grant",
+      "categories": [
+        {
+          "id": "research",
+          "state": "observed-live",
+          "source_ids": [
+            "grants-gov-research-opportunities"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "innovation",
+          "state": "observed-live",
+          "source_ids": [
+            "govuk-innovation-funding",
+            "depa-digital-startup-fund"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "arts-culture",
+          "state": "observed-live",
+          "source_ids": [
+            "creative-europe-culture-calls"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "community",
+          "state": "observed-live",
+          "source_ids": [
+            "national-lottery-community-funding"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "small-business",
+          "state": "observed-live",
+          "source_ids": [
+            "sba-small-business-grants"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "climate",
+          "state": "observed-live",
+          "source_ids": [
+            "iuk-zevi2-alternative-fuels"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-startup-program-data",
+      "domain": "startup-program",
+      "categories": [
+        {
+          "id": "accelerator",
+          "state": "observed-live",
+          "source_ids": [
+            "google-startups-accelerator-us"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "incubator",
+          "state": "observed-live",
+          "source_ids": [
+            "google-startup-school-incubator"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "venture-builder",
+          "state": "observed-live",
+          "source_ids": [
+            "entrepreneurs-first-venture-builder"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "founder-residency",
+          "state": "observed-live",
+          "source_ids": [
+            "antler-founder-residency"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "startup-perks",
+          "state": "observed-live",
+          "source_ids": [
+            "aws-activate-startup-perks"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-competition-data",
+      "domain": "competition",
+      "categories": [
+        {
+          "id": "hackathon",
+          "state": "observed-live",
+          "source_ids": [
+            "nasa-space-apps-2026"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "innovation-challenge",
+          "state": "observed-live",
+          "source_ids": [
+            "nasa-prizes-innovation-challenges"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "creative-contest",
+          "state": "observed-live",
+          "source_ids": [
+            "creative-europe-creative-contests"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "data-science",
+          "state": "observed-live",
+          "source_ids": [
+            "drivendata-data-science-competitions"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "entrepreneurship",
+          "state": "observed-live",
+          "source_ids": [
+            "cassini-challenges-2026"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-bounty-data",
+      "domain": "bounty",
+      "categories": [
+        {
+          "id": "open-source",
+          "state": "observed-live",
+          "source_ids": [
+            "up-for-grabs-open-source-tasks"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "security",
+          "state": "observed-live",
+          "source_ids": [
+            "github-bug-bounty-rules"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "documentation",
+          "state": "observed-live",
+          "source_ids": [
+            "google-season-of-docs"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "translation",
+          "state": "observed-live",
+          "source_ids": [
+            "mozilla-pontoon-translation"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "community-task",
+          "state": "observed-live",
+          "source_ids": [
+            "apache-community-tasks"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-benefit-data",
+      "domain": "benefit",
+      "categories": [
+        {
+          "id": "public-assistance",
+          "state": "observed-live",
+          "source_ids": [
+            "govuk-universal-credit",
+            "thaigov-state-welfare-2569"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "utility-support",
+          "state": "observed-live",
+          "source_ids": [
+            "thaigov-water-support-2569"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "housing-support",
+          "state": "observed-live",
+          "source_ids": [
+            "govuk-housing-benefit"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "member-benefit",
+          "state": "observed-live",
+          "source_ids": [
+            "nhs-healthcare-travel-member-benefit"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "accessibility",
+          "state": "observed-live",
+          "source_ids": [
+            "govuk-disabled-students-allowance"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "fee-waiver",
+          "state": "observed-live",
+          "source_ids": [
+            "govuk-court-fee-remission"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-freebie-data",
+      "domain": "freebie",
+      "categories": [
+        {
+          "id": "software-license",
+          "state": "observed-live",
+          "source_ids": [
+            "github-student-benefits",
+            "jetbrains-student-pack"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "cloud-credit",
+          "state": "observed-live",
+          "source_ids": [
+            "aws-activate-cloud-credits"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "api-credit",
+          "state": "observed-live",
+          "source_ids": [
+            "google-maps-platform-api-credit"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "physical-sample",
+          "state": "observed-live",
+          "source_ids": [
+            "usps-free-shipping-supplies"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "digital-asset",
+          "state": "observed-live",
+          "source_ids": [
+            "nasa-open-images-digital-assets"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "giveaway",
+          "state": "observed-live",
+          "source_ids": [
+            "national-geographic-photo-contests"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-deal-data",
+      "domain": "deal",
+      "categories": [
+        {
+          "id": "coupon",
+          "state": "observed-live",
+          "source_ids": [
+            "microsoft-education-coupon"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "cashback",
+          "state": "observed-live",
+          "source_ids": [
+            "rakuten-cashback"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "rebate",
+          "state": "observed-live",
+          "source_ids": [
+            "energystar-rebate-finder"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "discount",
+          "state": "observed-live",
+          "source_ids": [
+            "apple-education-college-offer-2026"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "bundle",
+          "state": "observed-live",
+          "source_ids": [
+            "steam-bundle-offers"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "referral-promotion",
+          "state": "observed-live",
+          "source_ids": [
+            "dropbox-referral-program"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-learning-program-data",
+      "domain": "learning-program",
+      "categories": [
+        {
+          "id": "course",
+          "state": "observed-live",
+          "source_ids": [
+            "mit-ocw-course-library"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "certification",
+          "state": "observed-live",
+          "source_ids": [
+            "google-developers-certification"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "bootcamp",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-skills-bootcamps-providers"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "mentorship",
+          "state": "observed-live",
+          "source_ids": [
+            "google-gear-mentorship"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "workshop",
+          "state": "observed-live",
+          "source_ids": [
+            "aws-builder-workshops"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "apprenticeship-training",
+          "state": "observed-live",
+          "source_ids": [
+            "uk-apprenticeships-directory"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-mobility-program-data",
+      "domain": "mobility-program",
+      "categories": [
+        {
+          "id": "travel-grant",
+          "state": "observed-live",
+          "source_ids": [
+            "discovereu-autumn-2026"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "exchange",
+          "state": "observed-live",
+          "source_ids": [
+            "erasmus-youth-exchanges"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "conference-support",
+          "state": "observed-live",
+          "source_ids": [
+            "cost-eu-resolve-conference-grants"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "artist-residency",
+          "state": "observed-live",
+          "source_ids": [
+            "culture-moves-europe-residency-hosts"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "volunteer-exchange",
+          "state": "observed-live",
+          "source_ids": [
+            "european-solidarity-corps-volunteering"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-paid-study-data",
+      "domain": "paid-study",
+      "categories": [
+        {
+          "id": "user-interview",
+          "state": "observed-live",
+          "source_ids": [
+            "respondent-paid-research-participants"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "usability-test",
+          "state": "observed-live",
+          "source_ids": [
+            "usertesting-paid-contributors"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "survey",
+          "state": "observed-live",
+          "source_ids": [
+            "yougov-panel-surveys"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "research-panel",
+          "state": "observed-live",
+          "source_ids": [
+            "prolific-participants-how-it-works"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "academic-study",
+          "state": "observed-live",
+          "source_ids": [
+            "nih-research-participant-compensation"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-procurement-data",
+      "domain": "procurement",
+      "categories": [
+        {
+          "id": "rfp",
+          "state": "adapter-capable",
+          "source_ids": [
+            "contracts-finder-open-tenders"
+          ],
+          "next_gate": "Capture a current notice with this explicit marker and verify replay."
+        },
+        {
+          "id": "rfq",
+          "state": "observed-live",
+          "source_ids": [
+            "contracts-finder-open-tenders"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "public-tender",
+          "state": "observed-live",
+          "source_ids": [
+            "contracts-finder-open-tenders"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and eligibility claims under review."
+        },
+        {
+          "id": "vendor-registration",
+          "state": "adapter-capable",
+          "source_ids": [
+            "contracts-finder-open-tenders"
+          ],
+          "next_gate": "Capture a current notice with this explicit marker and verify replay."
+        },
+        {
+          "id": "framework-agreement",
+          "state": "adapter-capable",
+          "source_ids": [
+            "contracts-finder-open-tenders"
+          ],
+          "next_gate": "Capture a current framework-agreement notice and verify replay."
+        }
+      ]
+    },
+    {
+      "product_id": "book-partnership-data",
+      "domain": "partnership",
+      "categories": [
+        {
+          "id": "affiliate",
+          "state": "observed-live",
+          "source_ids": [
+            "hubspot-affiliate-program"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        },
+        {
+          "id": "reseller",
+          "state": "observed-live",
+          "source_ids": [
+            "microsoft-csp-reseller"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        },
+        {
+          "id": "channel-partner",
+          "state": "observed-live",
+          "source_ids": [
+            "aws-marketplace-channel"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        },
+        {
+          "id": "distribution",
+          "state": "observed-live",
+          "source_ids": [
+            "shopify-partner-distribution"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        },
+        {
+          "id": "integration-partner",
+          "state": "observed-live",
+          "source_ids": [
+            "stripe-partner-ecosystem"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        },
+        {
+          "id": "licensing",
+          "state": "observed-live",
+          "source_ids": [
+            "apple-mfi-licensing"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and agreement terms under review."
+        }
+      ]
+    },
+    {
+      "product_id": "book-creator-program-data",
+      "domain": "creator-program",
+      "categories": [
+        {
+          "id": "creator-fund",
+          "state": "observed-live",
+          "source_ids": [
+            "youtube-partner-program"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and rights terms under review."
+        },
+        {
+          "id": "ambassador",
+          "state": "observed-live",
+          "source_ids": [
+            "google-developer-experts"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and rights terms under review."
+        },
+        {
+          "id": "sponsorship-program",
+          "state": "observed-live",
+          "source_ids": [
+            "github-sponsorship-program"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and rights terms under review."
+        },
+        {
+          "id": "open-source-sponsorship",
+          "state": "observed-live",
+          "source_ids": [
+            "github-sponsors-open-source"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and rights terms under review."
+        },
+        {
+          "id": "contributor-program",
+          "state": "observed-live",
+          "source_ids": [
+            "mozilla-contributor-program"
+          ],
+          "next_gate": "Keep freshness, parser drift, lineage and rights terms under review."
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "declared_categories": 76,
+    "observed_live": 73,
+    "registered_adapter_capabilities": 76,
+    "adapter_capable_without_current_record": 3,
+    "source_registration_required": 0
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "profile_version": "discovery.profile.v1",
+  "country": "TH",
+  "study_level": "unknown",
+  "student_status": "unknown",
+  "applicant_type": "individual",
+  "startup_stage": "unknown",
+  "has_legal_entity": null,
+  "beneficiary_groups": []
+}

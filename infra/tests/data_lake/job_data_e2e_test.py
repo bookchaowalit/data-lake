@@ -16,14 +16,15 @@ from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[3]
-PRODUCT = Path(
-    os.environ.get(
-        "BOOK_JOB_DATA_ROOT",
-        "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data",
-    )
-)
+sys.path.insert(0, str(ROOT / "infra/scripts"))
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
+
+# book-job-data is a separate repository: BOOK_JOB_DATA_ROOT, or the checkout
+# under $SOLO_EMPIRE_ROOT (default ~/solo-empire). The test skips when absent.
+PRODUCT = Path(os.environ.get("BOOK_JOB_DATA_ROOT") or OWNER_ROOT / "public/book-apps/tools/book-job-data")
 if not PRODUCT.is_absolute():
     PRODUCT = (ROOT / PRODUCT).resolve()
+PRODUCT_AVAILABLE = (PRODUCT / "src").is_dir()
 PRODUCT_SRC = PRODUCT / "src"
 FIXTURE = PRODUCT / "fixtures/job_postings.csv"
 
@@ -31,10 +32,11 @@ sys.path.insert(0, str(PRODUCT_SRC))
 sys.path.insert(0, str(ROOT / "infra/scripts"))
 sys.path.insert(0, str(ROOT / "infra/scripts/utils"))
 
-from book_job_data import config  # noqa: E402
-from book_job_data.ingest import ingest_capture  # noqa: E402
-from data_lake.job_data_readiness import build_job_readiness_report  # noqa: E402
-from job_client import fetch_jobs  # noqa: E402
+if PRODUCT_AVAILABLE:
+    from book_job_data import config  # noqa: E402
+    from book_job_data.ingest import ingest_capture  # noqa: E402
+    from data_lake.job_data_readiness import build_job_readiness_report  # noqa: E402
+    from job_client import fetch_jobs  # noqa: E402
 
 
 def free_port() -> int:
@@ -48,6 +50,7 @@ def get_json(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
+@unittest.skipUnless(PRODUCT_AVAILABLE, "book-job-data repository not found (set BOOK_JOB_DATA_ROOT or SOLO_EMPIRE_ROOT)")
 class JobDataE2ETests(unittest.TestCase):
     def test_fixture_bronze_api_and_consumer_boundary(self) -> None:
         try:

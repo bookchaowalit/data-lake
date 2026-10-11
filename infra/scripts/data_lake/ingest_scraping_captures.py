@@ -34,6 +34,7 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from data_lake.ingest import ingest_payload  # noqa: E402
+from data_lake.workspace import WORKSPACE  # noqa: E402
 from data_lake.product_adapter import LakeProductContract, write_lineage  # noqa: E402
 
 
@@ -496,7 +497,7 @@ def ingest_capture(
     this to retain the full landing object and send only newly appended rows to
     Bronze.  Normal callers continue to read and map the capture file itself.
     """
-    path = ROOT / spec.path
+    path = WORKSPACE / spec.path
     if raw_override is None:
         with path.open("rb") as capture:
             raw = capture.read(32 * 1024 * 1024 + 1)
@@ -558,7 +559,7 @@ def ingest_capture(
             _lineage_contract(spec, lake_uri),
             result,
             dataset=spec.dataset,
-            data_dir=ROOT / Path(spec.path).parents[1],
+            data_dir=WORKSPACE / Path(spec.path).parents[1],
         )
     return {
         "product": spec.product,
@@ -605,7 +606,7 @@ def main(argv: list[str] | None = None) -> int:
     for spec in CAPTURES:
         if spec.product not in selected:
             continue
-        path = ROOT / spec.path
+        path = WORKSPACE / spec.path
         if not path.is_file():
             skipped.append({"product": spec.product, "dataset": spec.dataset, "path": spec.path})
             continue

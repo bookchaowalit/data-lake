@@ -1,0 +1,61 @@
+# Track B job-data contract. This is intentionally separate from the frozen
+# seven-product data-product-contracts-v2.yaml and from the retired opportunity synthesis.
+contract_id: job-data-contract-v1
+status: active
+source: book-job-data
+domain: jobs
+schema_version: job.v1
+port: 8109
+producer:
+  repository: book-job-scraping
+  boundary: file_capture_only
+  allowed_inputs: [job_postings.csv, career_postings.csv, matched_jobs.csv, leads.csv, jobsdb_jobs.csv]
+  forbidden: [backend_push, retired_opportunity_synthesis_push, external_writes]
+datasets:
+  - job_postings
+  - job_postings_history
+  - job_matches
+  - job_matches_history
+  - job_leads
+  - job_leads_history
+qualification:
+  policy_owner: book-job-scraping/config/job_targeting.yaml
+  policy_version: contract-first-thailand-v1
+  qualified_discovery_dataset: job_matches
+  required_fields:
+    - qualification_status
+    - policy_version
+    - employment_type
+    - work_arrangement
+    - thailand_eligibility
+    - concurrent_employment
+    - engagement_boundary
+    - application_readiness
+    - qualification_reasons
+  optional_human_verification_fields:
+    - verified_employment_type
+    - verified_work_arrangement
+    - verified_thailand_eligibility
+    - verified_concurrent_employment
+    - verified_engagement_boundary
+    - verification_notes
+  statuses:
+    PASS: flexible_engagement_with_thailand_eligibility_signal
+    VERIFY: foreign_or_incomplete_terms_requiring_human_review
+    REJECT: incompatible_with_existing_thailand_full_time_role
+  submission_rule: "PASS plus application_readiness=APPROVED; qualification alone never authorizes submission"
+storage:
+  landing: exact_capture_bytes
+  bronze: parquet
+  query: duckdb
+  csv: optional_cli_projection_only
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  opportunity_import_dataset: job_matches
+  opportunity_import_statuses: [PASS]
+  opportunity_review_statuses: [VERIFY]
+  fail_closed_on_empty_or_missing_qualification: true
+  forbidden_sources: [book-job-scraping_csv, retired_opportunity_synthesis]
+  external_python_scan: [catalog, infra/scripts, projects/marketing]
+  scraper_internal_csv_scope: book-job-scraping/**

@@ -27,13 +27,10 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 from data_lake.ingest import ingest_payload  # noqa: E402
+from data_lake.workspace import OWNER_ROOT, relative_display  # noqa: E402
 
 
-SOURCE_ROOT = (
-    ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools"
-    / "book-job-scraping/data/exported"
-)
+SOURCE_ROOT = OWNER_ROOT / "public/book-apps/tools/book-job-scraping/data/exported"
 SOURCE_NAME = "book-discovery-data"
 DOMAIN = "discovery"
 SCHEMA_VERSION = "discovery.v1"
@@ -307,7 +304,7 @@ def ingest_capture(
             "adapter": SOURCE_NAME,
             "capture_mapping_version": "1",
             "capture_source": spec.source_id,
-            "capture_path": str(path.relative_to(ROOT)),
+            "capture_path": relative_display(path, ROOT),
             "source_url": spec.source_url,
             "dataset_role": "history" if spec.history else "snapshot",
             "privacy_class": "public",
@@ -319,7 +316,7 @@ def ingest_capture(
     return {
         "source": spec.source_id,
         "dataset": spec.dataset,
-        "capture_path": str(path.relative_to(ROOT)),
+        "capture_path": relative_display(path, ROOT),
         "record_count": len(records),
         "run_id": result.get("run_id"),
         "raw_key": result.get("raw_key"),
@@ -358,7 +355,7 @@ def main(argv: list[str] | None = None) -> int:
             continue
         path = source_root / spec.filename
         if not path.is_file():
-            skipped.append({"source": spec.source_id, "dataset": spec.dataset, "path": str(path.relative_to(ROOT))})
+            skipped.append({"source": spec.source_id, "dataset": spec.dataset, "path": relative_display(path, ROOT)})
             continue
         try:
             results.append(

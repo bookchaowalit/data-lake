@@ -1,0 +1,2 @@
+# Install into a fresh venv: uv venv && uv pip install -r requirements.txt
+-r infra/requirements-data-lake.txt

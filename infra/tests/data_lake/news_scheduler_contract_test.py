@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import os
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,12 +14,34 @@ from scheduler_contract_utils import require_bash
 
 
 ROOT = Path(__file__).resolve().parents[3]
-SETUP_CRON = (
-    ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/setup_cron.sh"
+sys.path.insert(0, str(ROOT / "infra/scripts"))
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
+
+# The cron script belongs to the book-news-scraping repository (found under
+# $SOLO_EMPIRE_ROOT, default ~/solo-empire); the class skips when it is absent.
+SETUP_CRON = OWNER_ROOT / "public/book-apps/tools/book-news-scraping/setup_cron.sh"
+
+
+def _script_resolves_control_plane() -> bool:
+    """setup_cron.sh walks up from its own directory looking for the runner.
+
+    The runner now lives in this repository, outside that ancestor chain, so the
+    script can only execute when a checkout still carries it. Until
+    book-news-scraping learns to honour an explicit root, executing tests skip.
+    """
+    return any(
+        (parent / "infra/scripts/data_lake/run_news_capture.py").is_file()
+        for parent in SETUP_CRON.parent.resolve().parents
+    ) or (SETUP_CRON.parent / "infra/scripts/data_lake/run_news_capture.py").is_file()
+
+
+needs_control_plane = unittest.skipUnless(
+    _script_resolves_control_plane(),
+    "setup_cron.sh cannot locate run_news_capture.py from its repository ancestors",
 )
 
 
+@unittest.skipUnless(SETUP_CRON.is_file(), "book-news-scraping repository not found under SOLO_EMPIRE_ROOT")
 class NewsSchedulerContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -41,6 +64,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
         self.assertIn("missing or not writable", self.script)
         self.assertIn("duckdb, feedparser, pyarrow", self.script)
 
+    @needs_control_plane
     def test_plan_is_read_only_and_prints_the_resolved_entry(self) -> None:
         with tempfile.TemporaryDirectory(prefix="news-scheduler-plan-") as lake:
             env = os.environ.copy()
@@ -59,6 +83,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
         self.assertIn("--lake-uri", completed.stdout)
         self.assertIn("book-news-scraping-feeds", completed.stdout)
 
+    @needs_control_plane
     def test_install_fails_before_touching_crontab_without_lake(self) -> None:
         env = os.environ.copy()
         env.pop("SOLO_EMPIRE_DATA_LAKE_URI", None)

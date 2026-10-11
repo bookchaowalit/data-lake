@@ -187,13 +187,18 @@ class NewsCaptureRuntimeTests(unittest.TestCase):
         self.assertEqual(report["error"], "lock_busy")
 
     def test_collector_timeout_is_redacted_to_a_stable_error_class(self) -> None:
-        with patch.object(
-            runner.subprocess,
-            "run",
-            side_effect=subprocess.TimeoutExpired(["python", "run_feeds.py"], 1),
-        ):
-            with self.assertRaises(runner.NewsCycleError) as raised:
-                runner._run_collector(limit=1, timeout_seconds=1)
+        with tempfile.TemporaryDirectory() as directory:
+            collector = Path(directory) / "run_feeds.py"
+            collector.write_text("", encoding="utf-8")
+            with patch.object(runner, "NEWS_COLLECTOR", collector), patch.object(
+                runner, "NEWS_REPO", Path(directory)
+            ), patch.object(
+                runner.subprocess,
+                "run",
+                side_effect=subprocess.TimeoutExpired(["python", "run_feeds.py"], 1),
+            ):
+                with self.assertRaises(runner.NewsCycleError) as raised:
+                    runner._run_collector(limit=1, timeout_seconds=1)
         self.assertEqual(raised.exception.code, "collector_timeout")
 
     def test_health_gate_rejects_stale_current_records(self) -> None:

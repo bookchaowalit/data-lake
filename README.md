@@ -17,19 +17,28 @@ repo นี้คงโครงสร้าง `infra/...` เดิมไว�
 - `solo-empire-data-lake` (public) เป็น runtime แพ็กเกจพกพา; README ของมันระบุว่า "parent `infra/scripts/data_lake`" เป็น canonical สำหรับ 9 modules ที่ใช้ร่วม — canonical นั้นย้ายมาที่ `infra/scripts/data_lake/` ใน repo นี้แล้ว (ต้องแก้ `scripts/check_parity.py` ของ public repo ให้ชี้มาที่นี่ — ยังไม่ได้ทำ)
 - `solo-event-hub` มีสำเนา vendored ของ ingest/storage/parquet/iceberg
 
-## Workspace overlay
+## Self-contained
 
-Tests/โค้ดอ้าง path ของ product repos และ contract ใน solo-empire (`projects/`, `systems/`, `templates/`, `repository-catalog/`, `infra/database/`). ตั้งลิงก์ (gitignored) ด้วย:
+repo นี้ไม่มี symlink ไปยัง solo-empire. สิ่งที่ต้องใช้จริงถูกคัดลอกมาไว้ใน repo:
+
+- `systems/architecture/` และ `systems/ai-data/` — data-product / discovery / scraping contracts และ scraping coverage registry (สำเนา; ต้นฉบับยังอยู่ใน solo-empire)
+- `templates/discovery-profile.example.json`, `repository-catalog/registries/projects.yaml`
+- `infra/database/` — schema และ migrations (ใช้โดย SQLite cell doubles ใน test)
+- `infra/scripts/cli/data-intake-cli.py` — สำเนาจาก `solo-event-hub` (`diary-intake-cli.py` เรียกใช้)
+
+**Product repositories** (`book-news-scraping`, `book-job-data`, `book-job-scraping`, `book-*-data`) เป็น repo แยก. runner/ingest อ่านจาก
+`$SOLO_EMPIRE_ROOT` (ค่าเริ่มต้น `~/solo-empire`, ดู `infra/scripts/data_lake/workspace.py`). ถ้าไม่พบ runner จะรายงานว่า source หายไป
+และ test ที่ต้องใช้ product repo จะ **skip** พร้อมเหตุผล (ไม่ fail). `BOOK_JOB_DATA_ROOT` override path ของ book-job-data ได้.
+
+## ติดตั้งและทดสอบ
 
 ```bash
-bash scripts/link-overlay.sh            # SOLO_EMPIRE_ROOT=~/solo-empire โดยปริยาย
-ln -s ~/solo-empire/.venv .venv         # หรือ python3 -m venv .venv && pip install -r infra/requirements-data-lake.txt
+uv venv && uv pip install -r requirements.txt     # pyarrow, duckdb, pyiceberg, httpx, dbt-duckdb, ...
+for t in $(find infra/tests -name '*_test.py' | sort); do .venv/bin/python "$t" || echo "FAIL $t"; done
 ```
 
-## ทดสอบ
+ใช้ `.venv` ที่ root ของ repo เพราะ `setup_*_cron.sh` เลือก `.venv/bin/python` ก่อน. ไม่มีตัวแปร env ที่ต้องตั้งเพื่อรัน suite
+(ถ้าต้องการ ทดสอบแบบไม่มี product repo: `SOLO_EMPIRE_ROOT=/nonexistent`).
 
-```bash
-for t in infra/tests/data_lake/*_test.py; do python3 $t || echo "FAIL $t"; done
-```
-
-ข้อจำกัดที่ทราบ: `discovery_portfolio_test`, `scraping_coverage_test`, `scraping_dry_run_test` ตรวจ boundary ของ path หลัง `resolve()` จึงไม่ผ่านเมื่อ `projects/` เป็น symlink (ผ่านเมื่ออยู่ใน workspace จริงก่อนย้าย). `scraping_capture_ingest_test`, `job_scraper_import_test`, `news_capture_runtime_test`, `dbt_lake_test` (ใน solo-empire), brave/telegram/diary tests ล้มเหลวอยู่แล้วก่อนย้าย (ขาด pyarrow/ค่า env) — ดูผลเปรียบเทียบใน handoff.
+ข้อจำกัดที่ทราบ: `news_scheduler_contract_test` สอง test ที่รัน `book-news-scraping/setup_cron.sh` จะ skip เพราะสคริปต์นั้นหา
+`run_news_capture.py` โดยไล่ขึ้นไปตาม ancestor ของตัวเอง (ตอนนี้ runner อยู่ใน repo นี้ ต้องแก้ฝั่ง book-news-scraping ให้รับ root จาก env).

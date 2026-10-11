@@ -68,6 +68,10 @@ def find_solo_empire_root(
     for parent in [cur, *cur.parents]:
         if (parent / "infra" / "scripts" / "data_lake" / "ingest.py").is_file():
             return parent
+    # This repository is itself the lake runtime root.
+    own_root = Path(__file__).resolve().parents[3]
+    if (own_root / "infra" / "scripts" / "data_lake" / "ingest.py").is_file():
+        return own_root
     return None
 
 

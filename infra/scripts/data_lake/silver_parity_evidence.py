@@ -25,12 +25,13 @@ if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
 from data_lake.silver import SilverProductContract, transform_bronze_to_silver  # noqa: E402
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 
 PRODUCT_ROOTS = {
-    "crypto": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data",
-    "stock": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data",
-    "fx": ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data",
+    "crypto": OWNER_ROOT / "public/book-products/book-crypto-data",
+    "stock": OWNER_ROOT / "public/book-products/book-stock-data",
+    "fx": OWNER_ROOT / "public/book-products/book-fx-data",
 }
 
 CRYPTO_SAMPLE = {

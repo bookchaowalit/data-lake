@@ -33,6 +33,8 @@ if str(SCRIPTS) not in sys.path:
     # data-lake package used by the readiness gate.
     sys.path.insert(0, str(SCRIPTS))
 
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
+
 
 @dataclass(frozen=True)
 class ProductRuntime:
@@ -59,7 +61,7 @@ PRODUCTS: tuple[ProductRuntime, ...] = (
 
 def product_workspace(product: ProductRuntime) -> Path:
     """Resolve a product workspace from the Book Dev owner boundary."""
-    owner_root = ROOT / "projects/product/engineering/book-dev/github/bookchaowalit"
+    owner_root = OWNER_ROOT
     if product.relative_path:
         return owner_root / product.relative_path
     # Keep compatibility for callers constructing ProductRuntime with the

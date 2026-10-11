@@ -39,7 +39,8 @@ class JobScraperImportTests(unittest.TestCase):
         lane, category = import_job_scraper.classify({**qualified_row(), 'search_lane': 'relocation'}, 'job_matches')
         self.assertEqual(lane, 'relocation')
         self.assertEqual(category, 'International career')
-        self.assertTrue(import_job_scraper.BACKLOG_MD.is_file())
+        # The backlog file itself lives in the solo-empire workspace, not in this repository.
+        self.assertEqual(import_job_scraper.BACKLOG_MD.parts[-3:], ("opportunities", "inventory", "OPPORTUNITY-BACKLOG.md"))
 
     def test_central_backlog_defaults_to_pass_only(self):
         self.assertEqual(import_job_scraper.DEFAULT_IMPORT_STATUSES, "PASS")

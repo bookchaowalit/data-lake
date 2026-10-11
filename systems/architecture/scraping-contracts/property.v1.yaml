@@ -1,0 +1,87 @@
+contract_id: property.v1
+status: draft
+collection_approval: pending_operator_approval
+not_yet_approved_for_collection: true
+source: book-property-scraping
+domain: property
+schema_version: property.v1
+producer:
+  repository: book-property-scraping
+  boundary: file_capture_only
+  allowed_inputs:
+    - data/exported/property_listings.csv
+    - data/exported/property_history.csv
+  forbidden:
+    - live_collection_without_source_approval
+    - external_writes
+    - credential_storage
+datasets:
+  - property_listings
+  - property_history
+  - property_social_leads
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - approved listing source
+    - Brave Search public results (storage rights pending)
+  terms_status: pending_operator_approval
+  storage_rights: pending_operator_approval
+  pdpa_purpose: pending_operator_legal_approval
+  pdpa_retention: pending_operator_legal_approval
+  attribution_required: true
+  source_url_required: true
+  human_review_required: true
+identity:
+  fields: [source_platform, url]
+  separator: "|"
+  source_record_id: "<source_platform>|<url>"
+record_fields:
+  - scraped_at
+  - captured_at
+  - title
+  - type
+  - listing_type
+  - url
+  - price_raw
+  - price
+  - bedrooms
+  - bathrooms
+  - area_sqm
+  - location
+  - description
+  - source_channel
+  - source_platform
+  - contact_name
+  - contact_role
+  - co_agent_status
+  - contact_phone
+  - contact_email
+  - contact_line
+  - contact_source_url
+  - contact_evidence
+  - contact_confidence
+  - contact_public
+  - lead_review_status
+  - review_decision
+  - reviewed_at
+  - reviewer_id
+  - outreach_status
+  - retention_until
+  - terms_basis_ref
+quality:
+  required: [scraped_at, title, url, source_channel, source_platform, contact_public, lead_review_status]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_scraped_at_per_source_record_id
+  contact_use: human_review_required
+storage:
+  landing: exact_capture_bytes_after_approval
+  bronze: parquet
+  query: duckdb
+  retention: pending_operator_legal_approval
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  allowed_consumers: [real-estate-research, opportunity-analysis]
+  contact_outreach: pending_human_review
+  republishing: pending_operator_legal_approval

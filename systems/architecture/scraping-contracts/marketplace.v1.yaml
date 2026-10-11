@@ -1,0 +1,62 @@
+contract_id: marketplace.v1
+status: draft
+collection_approval: pending_operator_approval
+not_yet_approved_for_collection: true
+source: book-ecommerce-scraping
+domain: marketplace
+schema_version: marketplace.v1
+producer:
+  repository: book-ecommerce-scraping
+  boundary: file_capture_only
+  allowed_inputs:
+    - data/exported/kaidee_classifieds.csv
+  forbidden:
+    - live_collection_without_source_approval
+    - external_writes
+    - credential_storage
+datasets:
+  - marketplace_listings
+  - marketplace_listings_history
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - Kaidee public listing pages (pending terms confirmation)
+  terms_status: pending_operator_approval
+  storage_rights: pending_operator_approval
+  reuse: pending_operator_approval
+  attribution_required: true
+  source_url_required: true
+identity:
+  fields: [source, listing_id]
+  separator: "|"
+  source_record_id: "<source>|<listing_id>"
+record_fields:
+  - captured_at
+  - listing_id
+  - title
+  - price_thb
+  - currency
+  - purpose
+  - category
+  - condition
+  - location
+  - url
+  - image_url
+  - seller_role
+  - first_approved_at
+  - source_url
+quality:
+  required: [captured_at, listing_id, title, url, source_url]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_captured_at_per_source_record_id
+storage:
+  landing: exact_capture_bytes_after_approval
+  bronze: parquet
+  query: duckdb
+  retention: pending_operator_approval
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  allowed_consumers: [market-research, opportunity-analysis]
+  republishing: pending_operator_approval

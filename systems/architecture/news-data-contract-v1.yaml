@@ -1,0 +1,58 @@
+# News data-product contract — independent from the frozen v2 market map.
+# Source owner: book-news-scraping. Consumers may read only the versioned API.
+contract_id: news-data-contract-v1
+status: active-local
+source: book-news-scraping
+domain: news
+schema_version: news.v1
+api:
+  host_default: 127.0.0.1
+  port: 8108
+  bind_policy: loopback_only_by_default
+  methods:
+    allowed_for_consumers: [GET]
+    blocked_by_default: [POST]
+  endpoints:
+    - GET /healthz
+    - GET /v1/metadata
+    - GET /v1/records
+    - GET /v1/records/{record_id}
+    - GET /v1/history
+    - POST /v1/refresh # returns 403 unless an explicit local refresh gate is enabled
+envelope:
+  required_keys: [schema_version, source, retrieved_at, data_status, items, next_cursor]
+  data_status_values: [ok, empty, stale, malformed, not_found, forbidden, error, accepted]
+datasets:
+  snapshot: articles
+  history: articles_history
+identity:
+  fields: [source, article_id]
+  separator: "|"
+record_fields:
+  - article_id
+  - title
+  - headline
+  - url
+  - canonical_url
+  - summary
+  - author
+  - categories
+  - section
+  - topics
+  - published_at
+  - updated_at
+  - image_url
+  - publisher
+  - source
+  - source_url
+  - source_feed_url
+  - observed_at
+  - capture_kind
+policy:
+  acquisition: publisher_rss_or_atom_only
+  attribution_required: true
+  free_only: true
+  paid_providers: false
+  external_writes: false
+  private_data: false
+  republishing: false

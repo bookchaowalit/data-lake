@@ -1,0 +1,972 @@
+# Repository catalog — external GitHub repositories
+# Generated: 2026-09-17
+# solo-empire no longer vendors these as submodules.
+# External projects may be checked out under the ignored projects/ boundary.
+
+projects:
+  - id: subscription-intelligence
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/subscription-intelligence.git
+    branch: main
+    last_known_commit: 9f4c1a9519a299e3cdac2698f404428c10dd910c
+    former_path: products/subscription-intelligence
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/subscription-intelligence
+    notes: >-
+      Standalone product (Gmail/Calendar read-only subscription intelligence).
+      Uses solo-empire infra utils as integration layer only.
+      Checkout under book-dev hierarchy: github/<owner>/book-products/<repo>.
+      Own .git; ignored by solo-empire via projects/product/engineering/*.
+
+  - id: booktrading
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-ai/booktrading.git
+    branch: main
+    last_known_commit: e29714808de12c8e0f0cf7b8211bd02521d874a0
+    former_path: projects/book-dev/book-products/booktrading
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading
+    notes: "GitHub resolves this remote to bookchaowalit-ai/booktrading; checkout is under the bookchaowalit-ai owner tree."
+
+  - id: book-job-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-job-scraping.git
+    branch: main
+    last_known_commit: 95eb515ac663b9e725e411066c605ad937f6f081
+    former_path: projects/product/engineering/book-dev/book-job-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping
+    notes: "Legacy multi-domain scraper. Target boundary is job discovery; keep existing job pipeline operational while mapping non-job schedules to sibling domain repositories."
+
+  - id: polyglot-benchmark-lab
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/polyglot-benchmark-lab.git
+    branch: main
+    last_known_commit: 224674d8cba962c01a742bac2a8e1a2365fac8b4
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/polyglot-benchmark-lab
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/polyglot-benchmark-lab
+    notes: >-
+      Public portfolio lab: same workloads per language/framework, contract-checked,
+      measured on GitHub-hosted runners (bench.yml commits results back). Results page
+      https://polyglot-benchmark-lab.vercel.app deploys on every push to main through Vercel's git integration (root directory site/); unlike most bookchaowalit.com apps, no CLI deploy is needed. Spec:
+      systems/architecture/polyglot-benchmark-lab.md
+
+  - id: book-job-data
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-job-data.git
+    branch: main
+    last_known_commit: 6942dbf9923159b6eea19a87c7160c6186ad99ca
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data-public
+    notes: >-
+      Public Track B lake-first data product. The public repository is checked
+      out separately at the -public path; the former path remains a temporary
+      Render compatibility mirror for rollback.
+
+  - id: book-ecommerce-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-ecommerce-scraping.git
+    branch: main
+    last_known_commit: 11f8a27e8383ee549497fb7702709a647b61f0f5
+    former_path: projects/product/engineering/book-dev/book-ecommerce-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-ecommerce-scraping
+    notes: "Separate ecommerce domain repository; keep independent for product and price intelligence."
+
+  - id: book-news-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-news-scraping.git
+    branch: main
+    last_known_commit: 2fc01f8ed0a7b27319be3e33b8f7435dbb6e85f7
+    former_path: projects/product/engineering/book-dev/book-news-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping
+    notes: "Separate news domain repository; keep independent for feed ingestion and digest delivery."
+
+  - id: book-property-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-property-scraping.git
+    branch: main
+    last_known_commit: f08b87fad684b317e545aeee77e6a32bf4a32454
+    former_path: projects/product/engineering/book-dev/book-property-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-property-scraping
+    notes: "Separate property domain repository; keep independent for listing ingestion and price intelligence."
+
+  - id: book-restaurant-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-restaurant-scraping.git
+    branch: main
+    last_known_commit: 5c7b84648319bd44637420f019e5a6b40659803d
+    former_path: projects/product/engineering/book-dev/book-restaurant-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping
+    notes: "Separate restaurant and food-beverage domain repository; keep independent for discovery and pricing."
+
+  - id: book-directory-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-directory-scraping.git
+    branch: main
+    last_known_commit: 5a2c53a80aee8a7502e5c509d7b6ac206e32b666
+    former_path: projects/product/engineering/book-dev/book-directory-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-directory-scraping
+    notes: "Separate directory and business-discovery domain repository; keep independent for local business data."
+
+  - id: book-opportunity-scraping
+    type: scraper
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-opportunity-scraping.git
+    branch: main
+    last_known_commit: fed35c7cc84b528fee4c286e336cb819f768e5ec
+    former_path: projects/product/engineering/book-dev/book-opportunity-scraping
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-opportunity-scraping
+    notes: "Legacy multi-domain opportunity scraper. Target decomposition is crypto, stocks, FX, DeFi, flights, SEO, and AI tools; cross-domain synthesis is retired."
+
+  - id: pixiu_scraping_facebook_backend
+    type: product
+    work_type: freelance
+    client: solo-empire
+    status: active
+    url: https://github.com/bookchaowalit-freelance/pixiu_scraping_facebook_backend.git
+    branch: master
+    last_known_commit: 69adb9e0f638bb61aed1fb5fd85245737d472bfa
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_backend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/pixiu/pixiu_scraping_facebook_backend
+    notes: "Pixiu Facebook scraping backend for freelance work; separate Git repository."
+
+  - id: pixiu_scraping_facebook_frontend
+    type: product
+    work_type: freelance
+    client: solo-empire
+    status: active
+    url: https://github.com/bookchaowalit-freelance/pixiu_scraping_facebook_frontend.git
+    branch: master
+    last_known_commit: df7f4b2e673a8cdbcf13d80eca3188b0264290ad
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-apps/tools/pixiu_scraping_facebook_frontend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/pixiu/pixiu_scraping_facebook_frontend
+    notes: "Pixiu Facebook scraping frontend for freelance work; separate Git repository."
+
+  - id: book-freelance-teeparinwat-backend
+    type: product
+    work_type: freelance
+    client: solo-empire
+    status: active
+    url: https://github.com/bookchaowalit-freelance/book-freelance-teeparinwat-backend.git
+    branch: main
+    last_known_commit: ae4e4112a088f1ceb7d12663e3ede620f0ed45f1
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-work/client-work/book-freelance-teeparinwat-backend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/teeparinwat/book-freelance-teeparinwat-backend
+    notes: "TeeParinwat freelance website backend; separate Git repository."
+
+  - id: book-freelance-teeparinwat-frontend
+    type: product
+    work_type: freelance
+    client: solo-empire
+    status: active
+    url: https://github.com/bookchaowalit-freelance/book-freelance-teeparinwat-frontend.git
+    branch: main
+    last_known_commit: ef194a8a14f9ad2cf24b95de43f93231668b675d
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/book-work/client-work/book-freelance-teeparinwat-frontend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/teeparinwat/book-freelance-teeparinwat-frontend
+    notes: "TeeParinwat freelance website frontend; separate Git repository."
+
+  - id: ai-doc-assistant
+    type: product
+    work_type: internal
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/ai-doc-assistant.git
+    branch: master
+    last_known_commit: b9f3dde11f15ec30020d308aa7f3380511119b0d
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/ai-doc-assistant
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/ai-doc-assistant
+    notes: "Internal RAG demo repository; separate Git boundary for deployment experiments."
+
+  - id: findfox-backend
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/findfox-backend.git
+    branch: master
+    last_known_commit: a599f668a3a0e4a1354a9f82fae14cca16bb18f0
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/cedtai-backend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/scan-n-pop/findfox-backend
+    notes: "FindFox backend for Oak; renamed from the legacy Scan n' Pop repository names."
+
+  - id: findfox-frontend
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/findfox-frontend.git
+    branch: main
+    last_known_commit: 2ef78c8a06b96057d25c46fdaef0bcdf94a001e1
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/cedtai-frontend
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/scan-n-pop/findfox-frontend
+    notes: "FindFox frontend for Oak; renamed from the legacy Scan n' Pop repository names."
+
+  - id: findfox-mobile
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/findfox-mobile.git
+    branch: main
+    last_known_commit: 21cff37a14ce73762d7f1cf6f59eaad056720a37
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/scan-n-pop/findfox-mobile
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/scan-n-pop/findfox-mobile
+    notes: "FindFox Flutter mobile client; separate Git repository for Android and iOS development."
+
+  - id: longevity-and-wellness
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/PeemPattadon/longevity-and-wellness.git
+    branch: main
+    last_known_commit: 5c641c0317aee673d2e9c8e56ed4dce873ca1ee4
+    former_path: longevity-and-wellness
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/wellness/longevity-and-wellness
+    notes: >-
+      External Turborepo (own .git). Must not live as a nested repo under solo-empire.
+      Local checkout: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/wellness/longevity-and-wellness/ (separate .git boundary).
+
+  - id: book-data-api
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-data-api.git
+    branch: master
+    last_known_commit: 4c0a03f88073ea48cc2021c9ff7cfd8761a072d2
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-data-api
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-data-api
+
+  - id: book-grounded-ai-assistant
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-grounded-ai-assistant.git
+    branch: master
+    last_known_commit: 075fed748999fd951faec002e3ad526697e51dcf
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grounded-ai-assistant
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grounded-ai-assistant
+
+  - id: book-language-tool
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-language-tool.git
+    branch: master
+    last_known_commit: 8b2307dde25bf7080b176004c4f9884aa40b97ca
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-language-tool
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-language-tool
+
+  - id: book-migration-validation-workbench
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-migration-validation-workbench.git
+    branch: main
+    last_known_commit: dd447db87a5c11b6d3a0095579a7812aaa6b6e9d
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-migration-validation-workbench
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-migration-validation-workbench
+
+  - id: book-storybook
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-storybook.git
+    branch: main
+    last_known_commit: 9a68fb12b91a6ab939a16147a1df6664edbb2478
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/design/book-storybook
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/design/book-storybook
+    notes: "The generated Figma manifest is intentionally ignored locally because it exceeds GitHub's file-size limit."
+
+  - id: book-finance-core
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-finance-core.git
+    branch: main
+    last_known_commit: 047c64c0c631acb6d6cd8317f32282eac0eebe89
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-finance-core
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-finance-core
+
+  - id: book-portfolio
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-portfolio.git
+    branch: master
+    last_known_commit: b44e93e7395ef42162191a6aa2842e48684fefd9
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-portfolio
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-portfolio
+
+  - id: organization-environment
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/organization-environment.git
+    branch: main
+    last_known_commit: 7524bc6c81d43b483970a17785e53e134b32a971
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/organization-environment
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/organization-environment
+
+  - id: provenchain
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/provenchain.git
+    branch: main
+    last_known_commit: 143490c185b59503e6d6902b506b8831a5f90835
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/provenchain
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/provenchain
+
+  - id: solo-empire-backstage
+    type: product
+    work_type: internal
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/solo-empire-backstage.git
+    branch: master
+    last_known_commit: 4f8acb439b9388473d503bc1541629323b17fe79
+    former_path: solo-empire-backstage
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/solo-empire-backstage
+    notes: "The sibling Ubuntu checkout is normalized into the Book Dev clone tree for the Windows/WSL migration."
+
+  - id: azure-migration-design
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/azure-migration-design.git
+    branch: main
+    last_known_commit: 7a1a90a4d170881af931e87661012cbf889d55c2
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/azure-migration-database-design/azure-migration-design
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/azure-migration-database-design/azure-migration-design
+
+  - id: ev3-api
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/ev3-api.git
+    branch: main
+    last_known_commit: 227a55d4597eae5c35d17fb45b896b64c810d6f2
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-api
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-api
+
+  - id: ev3-mobile
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/ev3-mobile.git
+    branch: main
+    last_known_commit: b9155d0c78b549629cf649056b111c7aac704987
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-mobile
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-mobile
+
+  - id: ev3-web
+    type: product
+    work_type: outsource
+    client: oak
+    status: active
+    url: https://github.com/bookchaowalit/ev3-web.git
+    branch: main
+    last_known_commit: 23d408737b9b84d5b29174b40e036b2f637c900c
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/oak/ev3-franchise/ev3-web
+
+  - id: pc-request-portal
+    type: product
+    work_type: freelance
+    client: partner-company
+    status: active
+    url: https://github.com/bookchaowalit-freelance/pc-request-portal.git
+    branch: master
+    last_known_commit: dbbc58005f6028cf10e02be54582252610c3dae1
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal
+
+  - id: pc-request-portal-api
+    type: product
+    work_type: freelance
+    client: partner-company
+    status: active
+    url: https://github.com/bookchaowalit-freelance/pc-request-portal-api.git
+    branch: master
+    last_known_commit: 26045d42b5be0919fd9300457dcfb02bd843e1e0
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal/pc-request-portal-api
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal/pc-request-portal-api
+
+  - id: pc-request-portal-web
+    type: product
+    work_type: freelance
+    client: partner-company
+    status: active
+    url: https://github.com/bookchaowalit-freelance/pc-request-portal-web.git
+    branch: master
+    last_known_commit: ad80de7450bc5881984dcf7e51cc3b9e777c03c2
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal/pc-request-portal-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-freelance/partner-company/pc-request-portal/pc-request-portal-web
+
+  - id: book-ai-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-ai-platform.git
+    branch: main
+    last_known_commit: 8d72509eae8d4b4c44a1f3490fa95b00cd639d6f
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-ai-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-ai-platform
+    notes: "Published Book Platform boundary; runtime extraction and provider integration remain separately gated."
+
+  - id: book-api-gateway
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-api-gateway.git
+    branch: main
+    last_known_commit: 94b61e58ee7b76c862ddf3885a12af7221912132
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-api-gateway
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-api-gateway
+    notes: "Published Book Platform migration pilot; production route cutover remains separately gated."
+
+  - id: book-commerce-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-commerce-platform.git
+    branch: main
+    last_known_commit: 19b82b38e7110131253301956c9e56b35bf00c77
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-commerce-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-commerce-platform
+    notes: "Published Book Platform boundary; order and payment parity gates remain open."
+
+  - id: book-communication-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-communication-platform.git
+    branch: main
+    last_known_commit: b87a0e9cf5dcf3790cfc71f37d8863ba1475a992
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-communication-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-communication-platform
+    notes: "Published Book Platform boundary; provider adapter, retry and opt-out gates remain open."
+
+  - id: book-data-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-data-platform.git
+    branch: main
+    last_known_commit: da67bc4093093fb6870486d7924ac7ded54975fc
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-data-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-data-platform
+    notes: "Published Book Platform boundary; lake contract, lineage and replay gates remain open."
+
+  - id: book-developer-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-developer-platform.git
+    branch: main
+    last_known_commit: a65900fd6c5c377ac9e87823d9ba7a74bba4f979
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-developer-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-developer-platform
+    notes: "Published Book Platform boundary for repository, CI/CD and release conventions."
+
+  - id: book-identity-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-identity-platform.git
+    branch: main
+    last_known_commit: e3edc4fee386983a3c00d6186fa208ee6af60786
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-identity-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-identity-platform
+    notes: "Published Book Platform boundary; tenant, credential and session parity gates remain open."
+
+  - id: book-logistics-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-logistics-platform.git
+    branch: main
+    last_known_commit: e4a5f093be20ae2d22bc1989dabaef44f346958c
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-logistics-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-logistics-platform
+    notes: "Published Book Platform boundary; carrier sandbox and tracking gates remain open."
+
+  - id: book-media-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-media-platform.git
+    branch: main
+    last_known_commit: 6831d30d979d2b00e9b3b4e400d5474f2eccf211
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-media-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-media-platform
+    notes: "Published Book Platform boundary; content validation and access-control gates remain open."
+
+  - id: book-observability-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-observability-platform.git
+    branch: main
+    last_known_commit: 57b74a25787265a894c82e4a1e7e7865803e7b0e
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-observability-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-observability-platform
+    notes: "Published Book Platform boundary; telemetry redaction, retention and alert-drill gates remain open."
+
+  - id: book-payment-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-payment-platform.git
+    branch: main
+    last_known_commit: 604a3595bd812572cbef8cb9c1899295048b5655
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-payment-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-payment-platform
+    notes: "Published Book Platform boundary; sandbox provider, webhook and ledger gates remain open."
+
+  - id: book-security-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-security-platform.git
+    branch: main
+    last_known_commit: 5c21ff89b10568f5582b781473e17f0f71c1d29e
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-security-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-security-platform
+    notes: "Published Book Platform boundary; threat-model, least-privilege and recovery gates remain open."
+
+  - id: book-workflow-platform
+    type: infra
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-backend/book-workflow-platform.git
+    branch: main
+    last_known_commit: 31a34a2725bfc11763f4d0e9b3e1b3b4179ba356
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-workflow-platform
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-workflow-platform
+    notes: "Published Book Platform boundary; durable execution and duplicate-job gates remain open."
+
+  - id: agency-cyber-security-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-cyber-security-web.git
+    branch: main
+    last_known_commit: d1e0045b465a82de29c3f91facbcc92a0e6dc689
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-cyber-security-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-cyber-security-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-defense-aerospace-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-defense-aerospace-web.git
+    branch: main
+    last_known_commit: 69e778a6122832da5d29f86334c0e32f404d401c
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-defense-aerospace-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-defense-aerospace-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-energy-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-energy-web.git
+    branch: main
+    last_known_commit: b4145f577be60bdfa6fabe440e2ca289a38774a3
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-energy-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-energy-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-governance-risk-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-governance-risk-web.git
+    branch: main
+    last_known_commit: 09ad07ba52d6657bc43ddcae597ae70a1fc430d5
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-governance-risk-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-governance-risk-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-healthcare-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-healthcare-web.git
+    branch: main
+    last_known_commit: dfc0a22c1976e7d79fbe19e39c173a3822f9d844
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-healthcare-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-healthcare-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-industrial-infrastructure-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-industrial-infrastructure-web.git
+    branch: main
+    last_known_commit: 414282f0f53fc16fe50f4a147ecb812ff2f67bd6
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-industrial-infrastructure-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-industrial-infrastructure-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-insurance-risk-transfer-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-insurance-risk-transfer-web.git
+    branch: main
+    last_known_commit: 4baa77634c2be50623e50b527c56f85af963a890
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-insurance-risk-transfer-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-insurance-risk-transfer-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-investment-asset-management-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-investment-asset-management-web.git
+    branch: main
+    last_known_commit: ecd2f68b9e0ccb4d5cb617cbd1c5af04dd7cd739
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-investment-asset-management-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-investment-asset-management-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-legal-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-legal-web.git
+    branch: main
+    last_known_commit: 8f0262d835c4b3d92d1f95406fa9e5752326167b
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-legal-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-legal-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-real-estate-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-real-estate-web.git
+    branch: main
+    last_known_commit: 533d8c73538a79e6f8edc67b141940600ae047aa
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-real-estate-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-real-estate-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-science-deep-tech-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-science-deep-tech-web.git
+    branch: main
+    last_known_commit: 7ae06d8a75091deb302623b60b1d27bbab57a6e1
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-science-deep-tech-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-science-deep-tech-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-talent-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-talent-web.git
+    branch: main
+    last_known_commit: 2f197ba6681348a68c63de5b9791e7cba31b48ea
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-talent-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-talent-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-technology-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-technology-web.git
+    branch: main
+    last_known_commit: 66f6e4f85daa50d48cde3c7f832f58020d1f8d8e
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-technology-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-technology-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: agency-transactions-corporate-finance-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/agency-transactions-corporate-finance-web.git
+    branch: main
+    last_known_commit: cf8f4eb364537e38387824d76f8847f2760bc743
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-transactions-corporate-finance-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-transactions-corporate-finance-web
+    notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
+
+  - id: book-agency-web
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit-website/book-agency-web.git
+    branch: main
+    last_known_commit: 1ae87a488b16f31b3c77ddfe448224e85682723c
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-agency-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/book-agency-web
+    notes: "Shared public agency baseline and generator source; not a deployment owner for the 14 vertical sites."
+
+  - id: book-discovery-data
+    type: product
+    work_type: owned
+    client: null
+    status: active
+    url: https://github.com/bookchaowalit/book-discovery-data.git
+    branch: main
+    last_known_commit: 9bf8715c1b1997726fc4542c4ec008c8dd5f0528
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-discovery-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-discovery-data
+    notes: "Published discovery.v1 source boundary; local capture, release and deployment gates remain separate."
+
+# The fourteen discovery products remain local-source pilots even after their GitHub remotes
+# are published; `remote_url` and `last_known_commit` keep the clone plan
+# reproducible without changing the discovery portfolio contract.
+local_staging:
+  - id: book-scholarship-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-scholarship-data.git
+    last_known_commit: 7e077a58a574968360e7a1ba85a3d93841e033d2
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-scholarship-data
+    schema_version: scholarship.v1
+    live_schema_version: scholarship.v2
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-grant-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-grant-data.git
+    last_known_commit: af2400c5d53d4988f5c0a5f568bb495c32487bd1
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grant-data
+    schema_version: grant.v1
+    live_schema_version: grant.v2
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-startup-program-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-startup-program-data.git
+    last_known_commit: 4d75d6ebb2216f675fb26f49edd6756e16c47d0f
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-startup-program-data
+    schema_version: startup_program.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-competition-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-competition-data.git
+    last_known_commit: c84339642ad232137882b544c6a4eba7d8548550
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-competition-data
+    schema_version: competition.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-bounty-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-bounty-data.git
+    last_known_commit: fee593f4234888d750eb266daad45dbc143a91f5
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-bounty-data
+    schema_version: bounty.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-benefit-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-benefit-data.git
+    last_known_commit: 18933ab9a88b085d98f6e96205a0b50d6b8dbe4e
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-benefit-data
+    schema_version: benefit.v1
+    live_schema_version: benefit.v2
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-freebie-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-freebie-data.git
+    last_known_commit: dafc524b4881f2941c8ad3a5b7e852a05711f8a6
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-freebie-data
+    schema_version: freebie.v1
+    live_schema_version: freebie.v2
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-deal-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-deal-data.git
+    last_known_commit: bf082faa151d434ec0013de7911e2d455de0fec5
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-deal-data
+    schema_version: deal.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-learning-program-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-learning-program-data.git
+    last_known_commit: 1a06cd3fc998b8335fc246abc77cf1dbd9eecf53
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-learning-program-data
+    schema_version: learning_program.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-mobility-program-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-mobility-program-data.git
+    last_known_commit: 00b9e090f8b83c624773c044da52b5801729e89b
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-mobility-program-data
+    schema_version: mobility_program.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-paid-study-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-paid-study-data.git
+    last_known_commit: c99a22491172c29612028a7ac663c2976393872b
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-paid-study-data
+    schema_version: paid_study.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-procurement-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-procurement-data.git
+    last_known_commit: 6ad13061cb7f2c6cd6968a854023194b71c2ecef
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-procurement-data
+    schema_version: procurement.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-partnership-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-partnership-data.git
+    last_known_commit: d8ec2e37cb216da9cb06dc5155f4f3b97bb9f683
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-partnership-data
+    schema_version: partnership.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
+  - id: book-creator-program-data
+    type: product
+    work_type: owned
+    owner: bookchaowalit
+    status: local-source-pilot
+    branch: main
+    url: null
+    remote_url: https://github.com/bookchaowalit/book-creator-program-data.git
+    last_known_commit: 3559824ee275776fc8edf09d34b16c2072360e0d
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-creator-program-data
+    schema_version: creator_program.v1
+    portfolio_manifest: systems/architecture/discovery-portfolio-v1.json

@@ -15,10 +15,13 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[3]
-JOB_REPOSITORY = (
-    ROOT
-    / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data"
-)
+SCRIPTS = ROOT / "infra" / "scripts"
+if str(SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS))
+
+from data_lake.workspace import OWNER_ROOT, WORKSPACE  # noqa: E402
+
+JOB_REPOSITORY = OWNER_ROOT / "public/book-apps/tools/book-job-data"
 if str(JOB_REPOSITORY / "src") not in sys.path:
     sys.path.insert(0, str(JOB_REPOSITORY / "src"))
 
@@ -49,10 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         # the parent operator adapter explicit so the default task does not
         # silently omit that source while the public job-data boundary remains
         # collection-only.
-        career_capture = (
-            ROOT
-            / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv"
-        )
+        career_capture = OWNER_ROOT / "public/book-apps/tools/book-job-scraping/data/career_postings.csv"
         if career_capture.is_file() and career_capture.resolve() not in inputs:
             inputs.append(career_capture.resolve())
     # The owned ingest records input_path in manifest metadata. Run from the
@@ -60,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     # direct shell invocation produce identical metadata for the same bytes.
     for path in inputs:
         try:
-            stable_path = path.relative_to(ROOT)
+            stable_path = path.relative_to(WORKSPACE)
             forwarded.extend(("--input", stable_path.as_posix()))
         except ValueError:
             forwarded.extend(("--input", path.as_posix()))
@@ -70,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
         forwarded.append("--dry-run")
     previous_dir = Path.cwd()
     try:
-        os.chdir(ROOT)
+        os.chdir(WORKSPACE)
         return int(job_ingest.main(forwarded))
     finally:
         os.chdir(previous_dir)

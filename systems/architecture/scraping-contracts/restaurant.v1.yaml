@@ -1,0 +1,73 @@
+contract_id: restaurant.v1
+status: draft
+collection_approval: pending_operator_approval
+not_yet_approved_for_collection: true
+source: book-restaurant-scraping
+domain: local-business
+schema_version: restaurant.v1
+producer:
+  repository: book-restaurant-scraping
+  boundary: file_capture_only
+  allowed_inputs:
+    - data/exported/wongnai_bangkok.csv
+    - data/exported/wongnai_upcountry.csv
+  forbidden:
+    - live_collection_without_source_approval
+    - external_writes
+    - credential_storage
+datasets:
+  - restaurant_listings
+  - restaurant_listings_history
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - Wongnai public listing pages (pending terms confirmation)
+  terms_status: pending_operator_approval
+  storage_rights: pending_operator_approval
+  reuse: pending_operator_approval
+  attribution_required: true
+  source_url_required: true
+identity:
+  fields: [source, restaurant_id]
+  separator: "|"
+  source_record_id: "<source>|<restaurant_id>"
+record_fields:
+  - captured_at
+  - restaurant_id
+  - name
+  - branch
+  - categories
+  - rating
+  - review_count
+  - price_range
+  - price_range_value
+  - address
+  - district
+  - subdistrict
+  - city
+  - phone
+  - homepage
+  - latitude
+  - longitude
+  - url
+  - image_url
+  - verified_location
+  - location
+  - source
+  - source_url
+  - page_number
+quality:
+  required: [captured_at, restaurant_id, name, url, source_url]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_captured_at_per_source_record_id
+storage:
+  landing: exact_capture_bytes_after_approval
+  bronze: parquet
+  query: duckdb
+  retention: pending_operator_approval
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  allowed_consumers: [local-business-research, food-beverage-opportunities]
+  republishing: pending_operator_approval

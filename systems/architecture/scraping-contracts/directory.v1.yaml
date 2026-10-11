@@ -1,0 +1,74 @@
+contract_id: directory.v1
+status: draft
+collection_approval: pending_operator_approval
+not_yet_approved_for_collection: true
+source: book-directory-scraping
+domain: directory
+schema_version: directory.v1
+producer:
+  repository: book-directory-scraping
+  boundary: file_capture_only
+  allowed_inputs:
+    - fixtures/bangkapi_sample.json
+  forbidden:
+    - live_collection_without_source_approval
+    - external_writes
+    - credential_storage
+datasets:
+  - business_listings
+  - business_listings_history
+source_policy:
+  classification: public_source_with_terms
+  permitted_sources:
+    - approved official API or export (source selection pending)
+  terms_status: pending_operator_approval
+  storage_rights: pending_operator_approval
+  reuse: pending_operator_approval
+  attribution_required: true
+  source_url_required: true
+identity:
+  fields: [source, place_id]
+  separator: "|"
+  source_record_id: "<source>|<place_id>"
+record_fields:
+  - place_id
+  - name
+  - category
+  - matched_categories
+  - types
+  - primary_type
+  - formatted_address
+  - lat
+  - lng
+  - distance_m
+  - matched_radii_m
+  - rating
+  - user_rating_count
+  - price_level
+  - business_status
+  - delivery
+  - takeout
+  - opening_hours
+  - closing_hour
+  - website_uri
+  - google_maps_uri
+  - source
+  - collected_at
+  - expires_at
+  - evidence_id
+  - data_status
+quality:
+  required: [place_id, name, source, collected_at, evidence_id, data_status]
+  invalid_identity: quarantine
+  missing_timestamp: quarantine
+  duplicate_policy: latest_collected_at_per_source_record_id
+storage:
+  landing: exact_capture_bytes_after_approval
+  bronze: parquet
+  query: duckdb
+  retention: pending_operator_approval
+consumer_boundary:
+  api_first: true
+  fallback: bronze_duckdb
+  allowed_consumers: [local-business-research, lead-qualification]
+  republishing: pending_operator_approval
