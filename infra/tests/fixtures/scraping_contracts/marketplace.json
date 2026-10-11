@@ -1,0 +1,14 @@
+{
+  "schema_version": "marketplace.v1",
+  "captured_at": "2026-09-01T00:00:00Z",
+  "listing_id": "fixture-marketplace-1",
+  "title": "Fixture bicycle",
+  "price_thb": 1200,
+  "currency": "THB",
+  "purpose": "sale",
+  "category": "bicycles",
+  "condition": "used",
+  "location": "Bangkok",
+  "url": "https://example.invalid/marketplace/fixture-marketplace-1",
+  "source_url": "https://example.invalid/marketplace/fixture-marketplace-1"
+}

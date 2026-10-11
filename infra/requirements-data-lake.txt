@@ -1,0 +1,21 @@
+# Runtime for Bronze Parquet creation and the Iceberg/DuckDB lakehouse slice.
+# S3-compatible uploads use the AWS CLI; s3fs is used by PyIceberg for remote
+# Parquet metadata reads and writes.
+duckdb>=1.5.5
+# Bounded capture runtimes and offline scheduler dependency checks.
+httpx>=0.27.0
+feedparser>=6.0.0
+beautifulsoup4>=4.12.0
+# Draft v1/v2 discovery export validation used by the local capture consumers.
+jsonschema==4.26.0
+fastavro>=1.12.2
+kafka-python-ng>=2.2.3
+pyarrow>=25.0.1
+pyiceberg[sql-sqlite,s3fs]>=0.12.0
+# Multi-engine lake query lab (lab engines only; production remains DuckDB).
+psycopg[binary]>=3.3.5
+clickhouse-connect>=1.8.0
+# The embedded ClickHouse runtime has no Windows binary distribution.
+chdb>=4.4.0; sys_platform != "win32"
+# SQL transformation on top of Bronze Parquet (modern lakehouse pattern).
+dbt-duckdb>=1.11.0

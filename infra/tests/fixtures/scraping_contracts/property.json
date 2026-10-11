@@ -1,0 +1,19 @@
+{
+  "schema_version": "property.v1",
+  "scraped_at": "2026-09-01T00:00:00Z",
+  "captured_at": "2026-09-01T00:00:00Z",
+  "title": "Fixture condo",
+  "type": "condo",
+  "listing_type": "condo_rent_bkk",
+  "url": "https://example.invalid/property/fixture-condo-1",
+  "location": "Bangkok",
+  "source_channel": "listing",
+  "source_platform": "fixture",
+  "contact_role": "unknown",
+  "co_agent_status": "unknown",
+  "contact_public": false,
+  "lead_review_status": "needs_human_review",
+  "review_decision": "pending",
+  "retention_until": "pending",
+  "terms_basis_ref": "pending_operator_approval"
+}

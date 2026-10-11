@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+/projects
+/systems
+/templates
+/repository-catalog
+/infra/database
+/data/*
+!/data/.gitkeep
+.env
+/.venv
+!/data/exports/
+/data/exports/*
+!/data/exports/.gitkeep

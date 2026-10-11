@@ -1,0 +1,16 @@
+{
+  "schema_version": "restaurant.v1",
+  "captured_at": "2026-09-01T00:00:00Z",
+  "restaurant_id": "fixture-restaurant-1",
+  "name": "Fixture Kitchen",
+  "branch": "Bangkok",
+  "categories": ["thai"],
+  "rating": 4.0,
+  "review_count": 10,
+  "price_range": "฿฿",
+  "address": "Fixture address",
+  "city": "Bangkok",
+  "url": "https://example.invalid/restaurants/fixture-restaurant-1",
+  "source": "fixture",
+  "source_url": "https://example.invalid/restaurants/fixture-restaurant-1"
+}

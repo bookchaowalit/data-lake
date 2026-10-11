@@ -1,0 +1,19 @@
+{
+  "schema_version": "directory.v1",
+  "place_id": "fixture-place-1",
+  "name": "Fixture Coffee",
+  "category": "coffee",
+  "matched_categories": ["coffee"],
+  "types": ["cafe"],
+  "primary_type": "cafe",
+  "formatted_address": "Fixture address",
+  "lat": 13.7652,
+  "lng": 100.6431,
+  "distance_m": 120.0,
+  "matched_radii_m": [500.0],
+  "source": "fixture",
+  "collected_at": "2026-09-01T00:00:00Z",
+  "expires_at": "2026-10-01T00:00:00Z",
+  "evidence_id": "fixture-evidence-1",
+  "data_status": "fixture"
+}
