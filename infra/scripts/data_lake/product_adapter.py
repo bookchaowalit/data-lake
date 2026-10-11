@@ -44,8 +44,6 @@ class LakeProductContract:
     bronze_schema_version: str = "1"
     project_root: Optional[Path] = None
     data_lake_uri: str = ""
-    # Deprecated and ignored: accepted so older product repositories keep working.
-    solo_empire_root: str = ""
     lineage_filename: str = "lake_lineage.json"
     datasets: tuple[str, ...] = field(default_factory=tuple)
 
@@ -70,7 +68,6 @@ def default_data_lake_uri(
     *,
     data_lake_uri: str = "",
     project_root: Optional[Path] = None,
-    solo_empire_root: str = "",  # deprecated, ignored
 ) -> str:
     explicit = (
         data_lake_uri
