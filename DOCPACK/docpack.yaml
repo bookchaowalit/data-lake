@@ -1,0 +1,8 @@
+system_id: bookchaowalit/private/solo-data-lake
+prefix: CARD
+brand: "DATA LAKE"
+subtitle: "Pipeline lake-first: landing → Bronze Parquet → Silver, collector และ dbt projection"
+footer: "solo-data-lake — Product Card"
+color: "#4a4e69"
+audience: internal
+tier: L0
