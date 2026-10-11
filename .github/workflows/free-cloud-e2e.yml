@@ -1,0 +1,71 @@
+name: Free Cloud E2E Contract
+
+on:
+  push:
+    paths:
+      - "infra/scripts/data_lake/**"
+      - "infra/tests/fixtures/cloud_lake_demo.json"
+      - "infra/tests/data_lake/free_cloud_e2e_test.py"
+      - "operations/runbooks/FREE-CLOUD-E2E-RUNBOOK.md"
+      - ".github/workflows/free-cloud-e2e.yml"
+  pull_request:
+    paths:
+      - "infra/scripts/data_lake/**"
+      - "infra/tests/fixtures/cloud_lake_demo.json"
+      - "infra/tests/data_lake/free_cloud_e2e_test.py"
+      - "operations/runbooks/FREE-CLOUD-E2E-RUNBOOK.md"
+      - ".github/workflows/free-cloud-e2e.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-contract:
+    name: Fixture to Bronze to DuckDB (no cloud writes)
+    runs-on: ubuntu-latest
+    env:
+      DATA_LAKE_CLOUD_WRITE_ENABLED: "false"
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      AWS_SESSION_TOKEN: ""
+      DATA_LAKE_S3_ENDPOINT: ""
+      ICEBERG_CATALOG_TOKEN: ""
+      R2_DATA_CATALOG_TOKEN: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install bounded data-lake runtime
+        run: python -m pip install --disable-pip-version-check pyarrow duckdb
+
+      - name: Confirm no cloud credentials are available
+        run: |
+          test -z "${AWS_ACCESS_KEY_ID}"
+          test -z "${AWS_SECRET_ACCESS_KEY}"
+          test -z "${DATA_LAKE_S3_ENDPOINT}"
+          test "${DATA_LAKE_CLOUD_WRITE_ENABLED}" = "false"
+
+      - name: Prepare evidence directory
+        run: mkdir -p artifacts/free-cloud-e2e
+
+      - name: Run FREE-CLOUD-E2E-001
+        run: |
+          python infra/scripts/data_lake/free_cloud_e2e.py \
+            --output-dir artifacts/free-cloud-e2e \
+            --json | tee artifacts/free-cloud-e2e/summary.json
+
+      - name: Upload offline evidence bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: free-cloud-e2e-${{ github.run_id }}
+          path: artifacts/free-cloud-e2e
+          if-no-files-found: error
+          retention-days: 14

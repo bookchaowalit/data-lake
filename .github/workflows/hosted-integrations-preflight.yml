@@ -1,0 +1,68 @@
+name: Hosted Integrations Preflight
+
+on:
+  workflow_dispatch:
+    inputs:
+      require_all:
+        description: "Fail unless every optional hosted integration has credentials"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    name: Secret-safe hosted integration readiness
+    runs-on: ubuntu-latest
+    env:
+      SOLO_EMPIRE_DATA_LAKE_URI: ${{ secrets.SOLO_EMPIRE_DATA_LAKE_URI }}
+      DATA_LAKE_S3_ENDPOINT: ${{ secrets.DATA_LAKE_S3_ENDPOINT }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      ICEBERG_CATALOG_URI: ${{ secrets.ICEBERG_CATALOG_URI }}
+      ICEBERG_WAREHOUSE_URI: ${{ secrets.ICEBERG_WAREHOUSE_URI }}
+      ICEBERG_CATALOG_TOKEN: ${{ secrets.ICEBERG_CATALOG_TOKEN }}
+      GOOGLE_CLOUD_PROJECT: ${{ secrets.GOOGLE_CLOUD_PROJECT }}
+      GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_SERVICE_ACCOUNT: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+      NEON_DATA_LAKE_CATALOG_URL: ${{ secrets.NEON_DATA_LAKE_CATALOG_URL }}
+      PREFECT_API_URL: ${{ secrets.PREFECT_API_URL }}
+      PREFECT_API_KEY: ${{ secrets.PREFECT_API_KEY }}
+      GRAFANA_CLOUD_OTLP_ENDPOINT: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+      GRAFANA_CLOUD_API_KEY: ${{ secrets.GRAFANA_CLOUD_API_KEY }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_PAGES_PROJECT: ${{ secrets.CLOUDFLARE_PAGES_PROJECT }}
+      TURNSTILE_SITE_KEY: ${{ secrets.TURNSTILE_SITE_KEY }}
+      TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      CLOUD_RUN_SERVICE: ${{ secrets.CLOUD_RUN_SERVICE }}
+      UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+      UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      POSTHOG_HOST: ${{ secrets.POSTHOG_HOST }}
+      POSTHOG_API_KEY: ${{ secrets.POSTHOG_API_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+      INFISICAL_SITE_URL: ${{ secrets.INFISICAL_SITE_URL }}
+      INFISICAL_PROJECT_ID: ${{ secrets.INFISICAL_PROJECT_ID }}
+      INFISICAL_ENVIRONMENT: ${{ secrets.INFISICAL_ENVIRONMENT }}
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_ID: ${{ secrets.INFISICAL_UNIVERSAL_AUTH_CLIENT_ID }}
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET: ${{ secrets.INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET }}
+      GITHUB_ACTIONS: "true"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Report configured integrations
+        run: python3 infra/scripts/data_lake/hosted_integrations.py --json
+      - name: Enforce all integrations when requested
+        if: ${{ inputs.require_all }}
+        run: |
+          python3 infra/scripts/data_lake/hosted_integrations.py \
+            --require r2-storage,r2-catalog,bigquery,neon,prefect-cloud,grafana-cloud,github-actions,cloudflare-workers,cloudflare-pages,cloudflare-turnstile,vercel-hobby,supabase-app,cloud-run,upstash-redis,resend,posthog,sentry,infisical

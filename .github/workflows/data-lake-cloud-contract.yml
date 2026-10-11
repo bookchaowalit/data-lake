@@ -1,0 +1,62 @@
+name: Data Lake Cloud Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/scripts/data_lake/**"
+      - "infra/tests/data_lake/cloud_lake_contract_test.py"
+      - "infra/tests/fixtures/cloud_lake_demo.json"
+      - "systems/ai-data/cloud-data-lake-mvp.md"
+      - ".github/workflows/data-lake-cloud-contract.yml"
+  pull_request:
+    paths:
+      - "infra/scripts/data_lake/**"
+      - "infra/tests/data_lake/cloud_lake_contract_test.py"
+      - "infra/tests/fixtures/cloud_lake_demo.json"
+      - "systems/ai-data/cloud-data-lake-mvp.md"
+      - ".github/workflows/data-lake-cloud-contract.yml"
+  schedule:
+    - cron: "30 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Hosted Lake Contract (offline)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Validate local target and cloud safety policy
+        run: python3 infra/scripts/data_lake/cloud_preflight.py --data-lake-uri file:///tmp/solo-empire-lake --json
+      - name: Run cloud-lane contract tests
+        run: python3 infra/tests/data_lake/cloud_lake_contract_test.py
+      - name: Install the small fixture runtime
+        run: python3 -m pip install --disable-pip-version-check pyarrow
+      - name: Run offline fixture ingest
+        run: |
+          rm -rf /tmp/solo-empire-cloud-lake
+          python3 infra/scripts/data_lake/ingest.py \
+            --input infra/tests/fixtures/cloud_lake_demo.json \
+            --source cloud-lake-demo \
+            --domain operations \
+            --dataset cloud_lake_demo \
+            --format json \
+            --data-lake-uri file:///tmp/solo-empire-cloud-lake \
+            --event-time-field event_time \
+            --privacy-class public \
+            --json
+          test "$(find /tmp/solo-empire-cloud-lake -name '*.parquet' | wc -l)" -eq 1
+          test "$(find /tmp/solo-empire-cloud-lake -name '*.json' | wc -l)" -ge 2
+          test "$(find /tmp/solo-empire-cloud-lake -name '*.csv' | wc -l)" -eq 0
+      - name: Confirm no cloud credentials are required
+        run: |
+          if env | grep -E '^(AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|ICEBERG_CATALOG_TOKEN|R2_DATA_CATALOG_TOKEN)='; then
+            echo "Unexpected cloud credential in offline contract job"
+            exit 1
+          fi

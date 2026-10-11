@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  data-lake-pipeline:
+    name: Data Lake Pipeline and Intake
+    runs-on: ubuntu-latest
+    env:
+      SOLO_EMPIRE_CI: "1"
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - run: python -m venv .venv
+      - run: .venv/bin/python -m pip install --disable-pip-version-check -r infra/requirements-data-lake.txt
+      - name: Run lake tests (contract snapshots need the solo-empire overlay; see README)
+        run: |
+          for t in infra/tests/data_lake/*_test.py; do .venv/bin/python "$t" || exit 1; done
+
+  dbt-lake-test:
+    name: dbt Lake Transform
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install dbt-duckdb
+        run: python -m pip install --disable-pip-version-check pyarrow duckdb dbt-duckdb
+      - name: Run dbt build against a synthetic Bronze fixture
+        run: python infra/tests/data_lake/dbt_lake_test.py

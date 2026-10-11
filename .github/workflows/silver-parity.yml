@@ -1,0 +1,141 @@
+name: Silver Parity Contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/scripts/data_lake/silver.py"
+      - "infra/scripts/data_lake/product_store.py"
+      - "infra/scripts/data_lake/silver_parity_evidence.py"
+      - "infra/scripts/data_lake/product_source_preflight.py"
+      - "infra/tests/data_lake/silver_test.py"
+      - "infra/tests/data_lake/product_source_preflight_test.py"
+      - "operations/runbooks/FREE-CLOUD-E2E-RUNBOOK.md"
+      - ".github/workflows/silver-parity.yml"
+  pull_request:
+    paths:
+      - "infra/scripts/data_lake/silver.py"
+      - "infra/scripts/data_lake/product_store.py"
+      - "infra/scripts/data_lake/silver_parity_evidence.py"
+      - "infra/scripts/data_lake/product_source_preflight.py"
+      - "infra/tests/data_lake/silver_test.py"
+      - "infra/tests/data_lake/product_source_preflight_test.py"
+      - "operations/runbooks/FREE-CLOUD-E2E-RUNBOOK.md"
+      - ".github/workflows/silver-parity.yml"
+  workflow_dispatch:
+    inputs:
+      checkout_product_repos:
+        description: "Checkout the separate crypto/stock/fx product repositories"
+        required: true
+        default: false
+        type: boolean
+      product_ref:
+        description: "Branch, tag, or SHA to use for all three product repositories"
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  silver-contract:
+    name: Bronze to Silver Core Contract
+    runs-on: ubuntu-latest
+    env:
+      DATA_LAKE_CLOUD_WRITE_ENABLED: "false"
+      AWS_ACCESS_KEY_ID: ""
+      AWS_SECRET_ACCESS_KEY: ""
+      AWS_SESSION_TOKEN: ""
+      DATA_LAKE_S3_ENDPOINT: ""
+      ICEBERG_CATALOG_TOKEN: ""
+      R2_DATA_CATALOG_TOKEN: ""
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      # These products are intentionally separate Git repositories. They are
+      # never fetched on push/PR by default; enable this only after the repos
+      # are published and PRODUCT_REPO_TOKEN has read-only access when needed.
+      - name: Checkout crypto product source
+        if: ${{ inputs.checkout_product_repos }}
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: bookchaowalit/book-crypto-data
+          ref: ${{ inputs.product_ref || 'main' }}
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data
+          token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Checkout stock product source
+        if: ${{ inputs.checkout_product_repos }}
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: bookchaowalit/book-stock-data
+          ref: ${{ inputs.product_ref || 'main' }}
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data
+          token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Checkout FX product source
+        if: ${{ inputs.checkout_product_repos }}
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          repository: bookchaowalit/book-fx-data
+          ref: ${{ inputs.product_ref || 'main' }}
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data
+          token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
+          persist-credentials: false
+
+      - name: Install bounded local lake runtime
+        run: python -m pip install --disable-pip-version-check pyarrow duckdb
+
+      - name: Confirm cloud writes and credentials are disabled
+        run: |
+          test "${DATA_LAKE_CLOUD_WRITE_ENABLED}" = "false"
+          test -z "${AWS_ACCESS_KEY_ID}"
+          test -z "${AWS_SECRET_ACCESS_KEY}"
+          test -z "${DATA_LAKE_S3_ENDPOINT}"
+
+      - name: Check nested product source readiness
+        id: source-readiness
+        run: |
+          python infra/scripts/data_lake/product_source_preflight.py \
+            --output artifacts/silver-parity/source-readiness.json | tee /tmp/silver-source-readiness.json
+          status="$(python -c 'import json; print(json.load(open("/tmp/silver-source-readiness.json"))["status"])')"
+          echo "status=${status}" >> "${GITHUB_OUTPUT}"
+
+      - name: Run shared Bronze to Silver contract tests
+        run: python infra/tests/data_lake/silver_test.py
+
+      - name: Run full product API evidence when nested sources are available
+        id: product-evidence
+        run: |
+          if test "${{ steps.source-readiness.outputs.status }}" = "available"; then
+            python infra/scripts/data_lake/silver_parity_evidence.py \
+              --output artifacts/silver-parity/summary.json
+            echo "available=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Product source status is '${{ steps.source-readiness.outputs.status }}'; core Silver contract remains enforced."
+            echo "available=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Upload source readiness evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: silver-source-readiness-${{ github.run_id }}
+          path: artifacts/silver-parity/source-readiness.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload product parity evidence
+        if: steps.product-evidence.outputs.available == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: silver-parity-${{ github.run_id }}
+          path: artifacts/silver-parity
+          if-no-files-found: error
+          retention-days: 14

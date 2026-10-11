@@ -1,0 +1,14 @@
+[
+  {
+    "id": "cloud-demo-1",
+    "domain": "portfolio",
+    "value": 1,
+    "event_time": "2026-08-07T00:00:00Z"
+  },
+  {
+    "id": "cloud-demo-2",
+    "domain": "portfolio",
+    "value": 2,
+    "event_time": "2026-08-07T00:01:00Z"
+  }
+]
