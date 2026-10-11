@@ -12,3 +12,10 @@ __pycache__/
 !/data/exports/
 /data/exports/*
 !/data/exports/.gitkeep
+
+# carried over from solo-empire root .gitignore
+infra/dbt/target/
+infra/dbt/dbt_packages/
+infra/dbt/logs/
+infra/dbt/**/*.duckdb
+infra/dbt/.user.yml
