@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import tempfile
 from datetime import date, datetime, timezone
@@ -16,7 +17,12 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[3]
-TRACKER = ROOT / 'opportunities/applications/JOB-TRACKER.md'
+# The tracker lives in the bookchaowalit/solo-opportunities repository (docs/ subtree).
+OPPORTUNITIES_REPO = Path(os.environ.get(
+    'SOLO_OPPORTUNITIES_ROOT',
+    str(ROOT / 'projects/product/engineering/book-dev/github/bookchaowalit/private/solo-opportunities'),
+))
+TRACKER = OPPORTUNITIES_REPO / 'docs/applications/JOB-TRACKER.md'
 PLACEHOLDER = '| — | — | — | — | No verified applications recorded in this tracker | — | — | — | Start from the central inventory after a real submission. |'
 
 
