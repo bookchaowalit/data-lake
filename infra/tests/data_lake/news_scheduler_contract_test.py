@@ -29,6 +29,8 @@ def _script_resolves_control_plane() -> bool:
     script can only execute when a checkout still carries it. Until
     book-news-scraping learns to honour an explicit root, executing tests skip.
     """
+    if SETUP_CRON.is_file() and "SOLO_DATA_LAKE_ROOT" in SETUP_CRON.read_text(encoding="utf-8"):
+        return True  # the script takes this repository's root from SOLO_DATA_LAKE_ROOT
     return any(
         (parent / "infra/scripts/data_lake/run_news_capture.py").is_file()
         for parent in SETUP_CRON.parent.resolve().parents
@@ -68,6 +70,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
     def test_plan_is_read_only_and_prints_the_resolved_entry(self) -> None:
         with tempfile.TemporaryDirectory(prefix="news-scheduler-plan-") as lake:
             env = os.environ.copy()
+            env["SOLO_DATA_LAKE_ROOT"] = str(ROOT)
             env["SOLO_EMPIRE_DATA_LAKE_URI"] = lake
             completed = subprocess.run(
                 [require_bash(), SETUP_CRON.as_posix(), "plan"],
@@ -86,6 +89,7 @@ class NewsSchedulerContractTests(unittest.TestCase):
     @needs_control_plane
     def test_install_fails_before_touching_crontab_without_lake(self) -> None:
         env = os.environ.copy()
+        env["SOLO_DATA_LAKE_ROOT"] = str(ROOT)
         env.pop("SOLO_EMPIRE_DATA_LAKE_URI", None)
         completed = subprocess.run(
             [require_bash(), SETUP_CRON.as_posix(), "install"],
