@@ -27,7 +27,7 @@ repo นี้ไม่มี symlink ไปยัง solo-empire. สิ่ง�
 - `infra/scripts/cli/data-intake-cli.py` — สำเนาจาก `solo-event-hub` (`diary-intake-cli.py` เรียกใช้)
 
 **Product repositories** (`book-news-scraping`, `book-job-data`, `book-job-scraping`, `book-*-data`) เป็น repo แยก. runner/ingest อ่านจาก
-`$SOLO_EMPIRE_ROOT` (ค่าเริ่มต้น `~/solo-empire`, ดู `infra/scripts/data_lake/workspace.py`). ถ้าไม่พบ runner จะรายงานว่า source หายไป
+`$SOLO_BOOK_DEV_ROOT` (โฟลเดอร์ Book Dev ที่มี `github/` อยู่ข้างใน; ไม่มีค่าเริ่มต้น, ดู `infra/scripts/data_lake/workspace.py`). ถ้าไม่พบ runner จะรายงานว่า source หายไป
 และ test ที่ต้องใช้ product repo จะ **skip** พร้อมเหตุผล (ไม่ fail). `BOOK_JOB_DATA_ROOT` override path ของ book-job-data ได้.
 
 ## ติดตั้งและทดสอบ
@@ -38,7 +38,7 @@ for t in $(find infra/tests -name '*_test.py' | sort); do .venv/bin/python "$t" 
 ```
 
 ใช้ `.venv` ที่ root ของ repo เพราะ `setup_*_cron.sh` เลือก `.venv/bin/python` ก่อน. ไม่มีตัวแปร env ที่ต้องตั้งเพื่อรัน suite
-(ถ้าต้องการ ทดสอบแบบไม่มี product repo: `SOLO_EMPIRE_ROOT=/nonexistent`).
+(ถ้าต้องการ ทดสอบแบบไม่มี product repo: ไม่ตั้ง `SOLO_BOOK_DEV_ROOT`).
 
 ข้อจำกัดที่ทราบ: `news_scheduler_contract_test` สอง test ที่รัน `book-news-scraping/setup_cron.sh` จะ skip เพราะสคริปต์นั้นหา
 `run_news_capture.py` โดยไล่ขึ้นไปตาม ancestor ของตัวเอง (ตอนนี้ runner อยู่ใน repo นี้ ต้องแก้ฝั่ง book-news-scraping ให้รับ root จาก env).

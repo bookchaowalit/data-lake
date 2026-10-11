@@ -40,7 +40,7 @@ from data_lake.ingest_scraping_captures import (  # noqa: E402
     ingest_capture,
 )
 from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
-from data_lake.workspace import OWNER_ROOT, WORKSPACE  # noqa: E402
+from data_lake.workspace import OWNER_ROOT, product_path  # noqa: E402
 
 NEWS_REPO = OWNER_ROOT / "public/book-apps/tools/book-news-scraping"
 NEWS_COLLECTOR = NEWS_REPO / "scripts" / "run_feeds.py"
@@ -175,7 +175,7 @@ def _run_collector(*, limit: int, timeout_seconds: float) -> None:
 
 
 def _read_capture_bytes(spec: CaptureSpec) -> bytes:
-    path = WORKSPACE / spec.path
+    path = product_path(spec.path)
     if not path.is_file():
         raise NewsCycleError("capture_missing")
     try:
@@ -216,7 +216,7 @@ def _history_baselines() -> dict[str, bytes]:
     for spec in NEWS_CAPTURES:
         if not spec.history:
             continue
-        path = WORKSPACE / spec.path
+        path = product_path(spec.path)
         if not path.is_file():
             baselines[spec.path] = b""
             continue

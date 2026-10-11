@@ -11,6 +11,9 @@ from unittest.mock import patch
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'infra' / 'scripts'))
+from data_lake.workspace import product_path  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[3]
 MANIFEST = ROOT / 'systems/architecture/discovery-portfolio-v1.json'
 CATEGORY_REGISTRY = ROOT / 'systems/architecture/discovery-category-registry-v1.json'
@@ -57,13 +60,13 @@ class DiscoveryPortfolioTests(unittest.TestCase):
         self.assertFalse({'job.v1'} & {p['schema_version'] for p in self.products})
 
     def test_local_checkouts_are_independent_and_explicitly_synthetic(self):
-        present = [p for p in self.products if (ROOT / p['local_path']).exists()]
+        present = [p for p in self.products if product_path(p['local_path']).exists()]
         if not present:
             self.skipTest('Ignored local scaffolds absent; manifest-only checkout')
         self.assertEqual(len(present), len(self.products), 'Partial local scaffold creation')
         for product in present:
             with self.subTest(product=product['id']):
-                repo = ROOT / product['local_path']
+                repo = product_path(product['local_path'])
                 self.assertTrue((repo / '.git').is_dir())
                 result = subprocess.run(['git', '-C', str(repo), 'rev-parse', '--show-toplevel'], capture_output=True, text=True, check=True)
                 self.assertEqual(Path(result.stdout.strip()).resolve(), repo.resolve())
@@ -159,7 +162,7 @@ class DiscoveryPortfolioTests(unittest.TestCase):
         import sys
 
         for product in self.products:
-            repo = ROOT / product['local_path']
+            repo = product_path(product['local_path'])
             if not repo.exists():
                 continue
             sys.path.insert(0, str(repo / 'src'))

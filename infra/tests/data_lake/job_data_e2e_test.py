@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT / "infra/scripts"))
 from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 # book-job-data is a separate repository: BOOK_JOB_DATA_ROOT, or the checkout
-# under $SOLO_EMPIRE_ROOT (default ~/solo-empire). The test skips when absent.
+# under $SOLO_BOOK_DEV_ROOT. The test skips when absent.
 PRODUCT = Path(os.environ.get("BOOK_JOB_DATA_ROOT") or OWNER_ROOT / "public/book-apps/tools/book-job-data")
 if not PRODUCT.is_absolute():
     PRODUCT = (ROOT / PRODUCT).resolve()
@@ -50,7 +50,7 @@ def get_json(url: str) -> dict:
         return json.loads(response.read().decode("utf-8"))
 
 
-@unittest.skipUnless(PRODUCT_AVAILABLE, "book-job-data repository not found (set BOOK_JOB_DATA_ROOT or SOLO_EMPIRE_ROOT)")
+@unittest.skipUnless(PRODUCT_AVAILABLE, "book-job-data repository not found (set BOOK_JOB_DATA_ROOT or SOLO_BOOK_DEV_ROOT)")
 class JobDataE2ETests(unittest.TestCase):
     def test_fixture_bronze_api_and_consumer_boundary(self) -> None:
         try:

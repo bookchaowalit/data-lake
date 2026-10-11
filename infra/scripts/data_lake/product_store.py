@@ -209,7 +209,6 @@ def load_silver_dataset(
     uri = data_lake_uri or default_data_lake_uri(
         data_lake_uri=contract.data_lake_uri,
         project_root=contract.project_root,
-        solo_empire_root=contract.solo_empire_root,
     )
     path = silver_dataset_path(contract, dataset, data_lake_uri=uri)
     source_kind = "silver_s3_parquet" if is_remote_lake_uri(uri) else "silver_parquet"
@@ -307,7 +306,6 @@ def load_layered_dataset(
                 data_lake_uri=data_lake_uri or default_data_lake_uri(
                     data_lake_uri=contract.data_lake_uri,
                     project_root=contract.project_root,
-                    solo_empire_root=contract.solo_empire_root,
                 ),
             ),
             "source_kind": "silver_parquet" if mode == "silver" else "bronze_parquet",
@@ -453,7 +451,6 @@ def load_bronze_dataset(
     uri = data_lake_uri or default_data_lake_uri(
         data_lake_uri=contract.data_lake_uri,
         project_root=contract.project_root,
-        solo_empire_root=contract.solo_empire_root,
     )
     try:
         bronze_path = str(bronze_dataset_dir(contract, dataset, data_lake_uri=uri))

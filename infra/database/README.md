@@ -1,6 +1,6 @@
 # Retired control-plane database
 
-The local SQLite control plane (`solo-empire.db`) was retired on 2026-10-11.
+The local SQLite control plane database was retired on 2026-10-11.
 Every domain now lives in its own cell (repository, Railway API, Neon); see
 [`online-systems.yaml`](../../repository-catalog/registries/online-systems.yaml).
 The last copy was archived outside the repository with the SQLite backup API

@@ -11,6 +11,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from discovery.profile import enrich, load_profile
+from data_lake.workspace import WORKSPACE, product_path
 
 ROOT=Path(__file__).resolve().parents[3]
 CATEGORY_REGISTRY=ROOT/'systems/architecture/discovery-category-registry-v1.json'
@@ -132,8 +133,8 @@ def main(argv=None):
     else:
         profile = None
     for product in products:
-        repo=(ROOT/product['local_path']).resolve()
-        if not repo.is_relative_to(ROOT/'projects/product/engineering/book-dev'):
+        repo=product_path(product['local_path']).resolve()
+        if not repo.is_relative_to(WORKSPACE.resolve()):
             raise ValueError('product outside portfolio boundary')
         command='records' if args.command in {'list','queue'} else args.command
         module=product['id'].replace('-','_')+'.capture'
@@ -150,7 +151,6 @@ def main(argv=None):
                         **os.environ,
                         'PYTHONPATH':str(repo/'src'),
                         'PYTHONIOENCODING':'utf-8',
-                        'SOLO_EMPIRE_ROOT':str(ROOT),
                     },
                     capture_output=True,
                     text=True,

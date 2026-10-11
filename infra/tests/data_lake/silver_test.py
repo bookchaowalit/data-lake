@@ -11,10 +11,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "infra" / "scripts"))
+from data_lake.workspace import OWNER_ROOT  # noqa: E402
+
 PRODUCT_SOURCE_ROOTS = (
-    ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data/src/book_crypto",
-    ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data/src/book_stock",
-    ROOT / "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data/src/book_fx",
+    OWNER_ROOT / "public/book-products/book-crypto-data/src/book_crypto",
+    OWNER_ROOT / "public/book-products/book-stock-data/src/book_stock",
+    OWNER_ROOT / "public/book-products/book-fx-data/src/book_fx",
 )
 
 from data_lake.ingest import ingest_payload  # noqa: E402

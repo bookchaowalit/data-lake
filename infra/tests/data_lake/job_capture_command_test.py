@@ -21,14 +21,14 @@ if product_repo_available(JOB_DATA_REL):
 
 @unittest.skipUnless(
     product_repo_available(JOB_DATA_REL),
-    "book-job-data repository not found under SOLO_EMPIRE_ROOT",
+    "book-job-data repository not found under SOLO_BOOK_DEV_ROOT",
 )
 class JobCaptureCommandTests(unittest.TestCase):
     def test_default_inputs_are_forwarded_as_stable_repo_relative_paths(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "data") as directory:
             fixture_root = Path(directory)
             capture_dir = fixture_root / (
-                "projects/product/engineering/book-dev/github/bookchaowalit/"
+                "github/bookchaowalit/"
                 "public/book-apps/tools/book-job-scraping/data"
             )
             capture_dir.mkdir(parents=True)
@@ -52,11 +52,11 @@ class JobCaptureCommandTests(unittest.TestCase):
                 )
         args = owned_main.call_args.args[0]
         self.assertIn(
-            "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv",
+            "github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv",
             args,
         )
         self.assertIn(
-            "projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv",
+            "github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv",
             args,
         )
         self.assertNotIn(str(capture), args)

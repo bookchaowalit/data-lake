@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "infra/scripts"))
 from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 # The cron script belongs to the book-news-scraping repository (found under
-# $SOLO_EMPIRE_ROOT, default ~/solo-empire); the class skips when it is absent.
+# $SOLO_BOOK_DEV_ROOT); the class skips when it is absent.
 SETUP_CRON = OWNER_ROOT / "public/book-apps/tools/book-news-scraping/setup_cron.sh"
 
 
@@ -43,7 +43,7 @@ needs_control_plane = unittest.skipUnless(
 )
 
 
-@unittest.skipUnless(SETUP_CRON.is_file(), "book-news-scraping repository not found under SOLO_EMPIRE_ROOT")
+@unittest.skipUnless(SETUP_CRON.is_file(), "book-news-scraping repository not found under SOLO_BOOK_DEV_ROOT")
 class NewsSchedulerContractTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:

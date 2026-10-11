@@ -16,24 +16,25 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-# Product repositories live in the Solo Empire workspace, not in this repository.
-ROOT = Path(os.environ.get("SOLO_EMPIRE_ROOT") or Path.home() / "solo-empire").expanduser()
+# Product repositories live under the Book Dev root ($SOLO_BOOK_DEV_ROOT, the
+# folder that contains github/), not in this repository.
+ROOT = Path(os.environ.get("SOLO_BOOK_DEV_ROOT") or "/nonexistent/SOLO_BOOK_DEV_ROOT-not-set").expanduser()
 
 PRODUCTS = (
     {
         "name": "book-crypto-data",
         "package": "book_crypto",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data",
+        "relative_path": "github/bookchaowalit/public/book-products/book-crypto-data",
     },
     {
         "name": "book-stock-data",
         "package": "book_stock",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data",
+        "relative_path": "github/bookchaowalit/public/book-products/book-stock-data",
     },
     {
         "name": "book-fx-data",
         "package": "book_fx",
-        "relative_path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data",
+        "relative_path": "github/bookchaowalit/public/book-products/book-fx-data",
     },
 )
 
