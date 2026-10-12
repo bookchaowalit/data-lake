@@ -186,7 +186,7 @@ task contracts:check
 
 First consumers migrated to the versioned envelopes:
 
-- `bookchaowalit/book-products/solo-empire-insights` — typed client + static UI
+- `bookchaowalit/book-products/insights-dashboard` — typed client + static UI
   with fixture fallback (`?fixtures=1`)
 - `bookchaowalit-website/.../bookchaowalit-portfolio-frontend` — Live Systems
   page reads ports 8101–8110 (or sanitized fixtures); legacy
@@ -211,7 +211,7 @@ The Track B contract is maintained separately in
 is `book-job-scraping capture → book-job-data landing/Bronze`; there is no
 scraper-to-backend push connection. The public `book-job-data` repository is
 the published source boundary, installs the public shared
-[`solo-empire-data-lake`](https://github.com/bookchaowalit/solo-empire-data-lake)
+[`data-lake-core`](https://github.com/bookchaowalit/data-lake-core)
 runtime, and its pinned commit is checked by parent CI.
 The former nested source remains temporarily as a compatibility mirror for the
 existing Render Docker context; it is not a second contract or consumer path.

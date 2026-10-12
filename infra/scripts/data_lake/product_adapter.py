@@ -95,7 +95,7 @@ def load_ingest_runtime(start: Optional[Path] = None):
     if solo_root is None:
         raise LakeUnavailable(
             "Cannot find the data-lake runtime (infra/scripts/data_lake). "
-            "Run from a solo-data-lake checkout."
+            "Run from a data-lake checkout."
         )
     _ensure_data_lake_on_path(solo_root)
     try:
@@ -116,7 +116,7 @@ def load_query_runtime(start: Optional[Path] = None):
     if solo_root is None:
         raise LakeUnavailable(
             "Cannot find the data-lake runtime (infra/scripts/data_lake). "
-            "Run from a solo-data-lake checkout."
+            "Run from a data-lake checkout."
         )
     _ensure_data_lake_on_path(solo_root)
     try:
@@ -134,7 +134,7 @@ def load_iceberg_query_runtime(start: Optional[Path] = None):
     if solo_root is None:
         raise LakeUnavailable(
             "Cannot find the data-lake runtime (infra/scripts/data_lake). "
-            "Run from a solo-data-lake checkout."
+            "Run from a data-lake checkout."
         )
     _ensure_data_lake_on_path(solo_root)
     try:

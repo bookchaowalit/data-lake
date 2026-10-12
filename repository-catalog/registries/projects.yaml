@@ -362,11 +362,11 @@ projects:
     work_type: internal
     client: null
     status: active
-    url: https://github.com/bookchaowalit/solo-empire-backstage.git
+    url: https://github.com/bookchaowalit/backstage-portal.git
     branch: master
     last_known_commit: 4f8acb439b9388473d503bc1541629323b17fe79
     former_path: solo-empire-backstage
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/solo-empire-backstage
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/backstage-portal
     notes: "The sibling Ubuntu checkout is normalized into the Book Dev clone tree for the Windows/WSL migration."
 
   - id: azure-migration-design

@@ -68,8 +68,8 @@ EXPECTED_PRODUCTS = [
 
 CONSUMER_SPECS = [
     {
-        "id": "solo-empire-insights",
-        "path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/solo-empire-insights",
+        "id": "insights-dashboard",
+        "path": "projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/insights-dashboard",
         "catalog_files": [
             "src/data-products/catalog.ts",
             "js/data-products-browser.js",

@@ -122,7 +122,7 @@ task docs:check
 
 | Consumer | Expects ports | Expects schemas |
 |---|---|---|
-| `solo-empire-insights` | 8101–8107 | seven domain `*.v1` |
+| `insights-dashboard` | 8101–8107 | seven domain `*.v1` |
 | `bookchaowalit-portfolio-frontend` | 8101–8107 | seven domain `*.v1` |
 
 Both consumers also support the additive `news.v1` (`:8108`) and

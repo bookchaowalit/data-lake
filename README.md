@@ -1,4 +1,4 @@
-# solo-data-lake
+# data-lake
 
 Pipeline และ collector ของ lake-first data products ของ Solo Empire: landing → Bronze Parquet → Silver, scraping coverage/health, scheduled capture (news/market/SEO/jobs), discovery portfolio, Telegram/Brave collectors, diary intake, และ dbt projection
 
@@ -10,12 +10,12 @@ repo นี้คงโครงสร้าง `infra/...` เดิมไว�
 - `infra/scripts/utils/` — สำเนา vendored ของ utils ที่โค้ดข้างบนต้องใช้ (`_env`, `cell_store`, `task_store`, `secret_resolver`, `job_client`, `data_product_contract_guard`, …)
 - `infra/dbt/` — dbt projection (`dbt_lake_test.py`)
 - `infra/tests/` — test ทั้งหมดของโค้ดข้างต้น
-- ผลิตภัณฑ์ข้อมูล `job.v1` (ผู้บริโภคคือ `book-job-data` และ `solo-crm` job-radar) — `book-job-data` ยังเป็น repo ของตัวเอง; ที่นี่มีเฉพาะ adapter/readiness/e2e
+- ผลิตภัณฑ์ข้อมูล `job.v1` (ผู้บริโภคคือ `book-job-data` และ `crm` job-radar) — `book-job-data` ยังเป็น repo ของตัวเอง; ที่นี่มีเฉพาะ adapter/readiness/e2e
 
 ## ความสัมพันธ์กับ repo อื่น
 
-- `solo-empire-data-lake` (public) เป็น runtime แพ็กเกจพกพา; README ของมันระบุว่า "parent `infra/scripts/data_lake`" เป็น canonical สำหรับ 9 modules ที่ใช้ร่วม — canonical นั้นย้ายมาที่ `infra/scripts/data_lake/` ใน repo นี้แล้ว (ต้องแก้ `scripts/check_parity.py` ของ public repo ให้ชี้มาที่นี่ — ยังไม่ได้ทำ)
-- `solo-event-hub` มีสำเนา vendored ของ ingest/storage/parquet/iceberg
+- `data-lake-core` (public) เป็น runtime แพ็กเกจพกพา; README ของมันระบุว่า "parent `infra/scripts/data_lake`" เป็น canonical สำหรับ 9 modules ที่ใช้ร่วม — canonical นั้นย้ายมาที่ `infra/scripts/data_lake/` ใน repo นี้แล้ว (ต้องแก้ `scripts/check_parity.py` ของ public repo ให้ชี้มาที่นี่ — ยังไม่ได้ทำ)
+- `event-hub` มีสำเนา vendored ของ ingest/storage/parquet/iceberg
 
 ## Self-contained
 
@@ -24,7 +24,7 @@ repo นี้ไม่มี symlink ไปยัง solo-empire. สิ่ง�
 - `systems/architecture/` และ `systems/ai-data/` — data-product / discovery / scraping contracts และ scraping coverage registry (สำเนา; ต้นฉบับยังอยู่ใน solo-empire)
 - `templates/discovery-profile.example.json`, `repository-catalog/registries/projects.yaml`
 - `infra/database/` — schema และ migrations (ใช้โดย SQLite cell doubles ใน test)
-- `infra/scripts/cli/data-intake-cli.py` — สำเนาจาก `solo-event-hub` (`diary-intake-cli.py` เรียกใช้)
+- `infra/scripts/cli/data-intake-cli.py` — สำเนาจาก `event-hub` (`diary-intake-cli.py` เรียกใช้)
 
 **Product repositories** (`book-news-scraping`, `book-job-data`, `book-job-scraping`, `book-*-data`) เป็น repo แยก. runner/ingest อ่านจาก
 `$SOLO_BOOK_DEV_ROOT` (โฟลเดอร์ Book Dev ที่มี `github/` อยู่ข้างใน; ไม่มีค่าเริ่มต้น, ดู `infra/scripts/data_lake/workspace.py`). ถ้าไม่พบ runner จะรายงานว่า source หายไป
