@@ -21,7 +21,7 @@ repo นี้คงโครงสร้าง `infra/...` เดิมไว�
 
 repo นี้ไม่มี symlink ไปยัง solo-empire. สิ่งที่ต้องใช้จริงถูกคัดลอกมาไว้ใน repo:
 
-- `systems/architecture/` และ `systems/ai-data/` — data-product / discovery / scraping contracts และ scraping coverage registry (สำเนา; ต้นฉบับยังอยู่ใน solo-empire)
+- `systems/architecture/` และ `systems/ai-data/` — data-product / discovery / scraping contracts และ scraping coverage registry (สำเนา; ต้นฉบับอยู่ใน `architecture-docs` `systems/`)
 - `templates/discovery-profile.example.json`, `repository-catalog/registries/projects.yaml`
 - `infra/database/` — schema และ migrations (ใช้โดย SQLite cell doubles ใน test)
 - `infra/scripts/cli/data-intake-cli.py` — สำเนาจาก `event-hub` (`diary-intake-cli.py` เรียกใช้)

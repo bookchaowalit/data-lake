@@ -1,15 +1,15 @@
 # Exported scheduler fixture for offline coverage-audit tests.
 # It is metadata only; do not install this file as a crontab.
-15 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_news_capture.py # book-news-scraping-feeds
-20 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_data_product_stack.py # book-scraping-scheduler
-25 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_seo_capture.py # book-seo-data-feeds
-30 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_jobs_capture.py # book-scraping-scheduler
-35 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-ecommerce-scraping-feeds
-40 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-restaurant-scraping-feeds
-45 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-crypto-data-feeds
-50 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-stock-data-feeds
-55 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-fx-data-feeds
-5 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-defi-data-feeds
-10 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-flight-data-feeds
-15 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-ai-tools-data-feeds
-20 * * * * /srv/solo-empire/infra/scripts/setup/run-python3.sh /srv/solo-empire/infra/scripts/data_lake/run_market_capture.py # book-directory-scraping-feeds
+15 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_news_capture.py # book-news-scraping-feeds
+20 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_data_product_stack.py # book-scraping-scheduler
+25 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_seo_capture.py # book-seo-data-feeds
+30 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_jobs_capture.py # book-scraping-scheduler
+35 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-ecommerce-scraping-feeds
+40 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-restaurant-scraping-feeds
+45 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-crypto-data-feeds
+50 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-stock-data-feeds
+55 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-fx-data-feeds
+5 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-defi-data-feeds
+10 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-flight-data-feeds
+15 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-ai-tools-data-feeds
+20 * * * * /srv/data-lake/infra/scripts/setup/run-python3.sh /srv/data-lake/infra/scripts/data_lake/run_market_capture.py # book-directory-scraping-feeds
