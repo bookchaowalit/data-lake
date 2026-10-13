@@ -41,7 +41,9 @@ class DiscoveryPortfolioTests(unittest.TestCase):
             self.assertTrue(set(capabilities) <= set(product['categories']))
             self.assertNotIn('..', Path(product['local_path']).parts)
             self.assertFalse(Path(product['local_path']).is_absolute())
-            self.assertTrue(product['local_path'].endswith('/' + product['id']))
+            # Checkout folders follow the domain-first repository names (2026-10-13);
+            # the product id stays the contract id.
+            self.assertEqual(Path(product['local_path']).name, 'opportunity-' + product['id'].removeprefix('book-'))
 
     def test_catalog_staging_matches_manifest(self):
         catalog = yaml.safe_load((ROOT / 'repository-catalog/registries/projects.yaml').read_text())

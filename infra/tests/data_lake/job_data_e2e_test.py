@@ -21,7 +21,7 @@ from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 # book-job-data is a separate repository: BOOK_JOB_DATA_ROOT, or the checkout
 # under $SOLO_BOOK_DEV_ROOT. The test skips when absent.
-PRODUCT = Path(os.environ.get("BOOK_JOB_DATA_ROOT") or OWNER_ROOT / "public/book-apps/tools/book-job-data")
+PRODUCT = Path(os.environ.get("BOOK_JOB_DATA_ROOT") or OWNER_ROOT / "public/book-apps/tools/book-job-data-public")
 if not PRODUCT.is_absolute():
     PRODUCT = (ROOT / PRODUCT).resolve()
 PRODUCT_AVAILABLE = (PRODUCT / "src").is_dir()

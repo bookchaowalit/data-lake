@@ -14,7 +14,7 @@ sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 
 from data_lake.workspace import OWNER_REL, product_repo_available  # noqa: E402
 
-JOB_DATA_REL = OWNER_REL + "/public/book-apps/tools/book-job-data"
+JOB_DATA_REL = OWNER_REL + "/public/book-apps/tools/book-job-data-public"
 if product_repo_available(JOB_DATA_REL):
     from data_lake import ingest_job_captures  # noqa: E402
 
@@ -29,7 +29,7 @@ class JobCaptureCommandTests(unittest.TestCase):
             fixture_root = Path(directory)
             capture_dir = fixture_root / (
                 "github/bookchaowalit/"
-                "public/book-apps/tools/book-job-scraping/data"
+                "public/book-apps/tools/career-job-scraper/data"
             )
             capture_dir.mkdir(parents=True)
             capture = capture_dir / "job_postings.csv"
@@ -52,11 +52,11 @@ class JobCaptureCommandTests(unittest.TestCase):
                 )
         args = owned_main.call_args.args[0]
         self.assertIn(
-            "github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv",
+            "github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/job_postings.csv",
             args,
         )
         self.assertIn(
-            "github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv",
+            "github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/career_postings.csv",
             args,
         )
         self.assertNotIn(str(capture), args)

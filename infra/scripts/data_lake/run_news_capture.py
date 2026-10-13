@@ -42,7 +42,7 @@ from data_lake.ingest_scraping_captures import (  # noqa: E402
 from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
 from data_lake.workspace import OWNER_ROOT, product_path  # noqa: E402
 
-NEWS_REPO = OWNER_ROOT / "public/book-apps/tools/book-news-scraping"
+NEWS_REPO = OWNER_ROOT / "public/book-apps/tools/content-news-scraper"
 NEWS_COLLECTOR = NEWS_REPO / "scripts" / "run_feeds.py"
 NEWS_CAPTURE_DIR = NEWS_REPO / "data" / "exported"
 # Share the lock with the domain-owned legacy cron entry so an eventual
