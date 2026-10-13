@@ -607,11 +607,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-cyber-security-web.git
+    url: https://github.com/bookchaowalit-agency/agency-cyber-security-web.git
     branch: main
     last_known_commit: d1e0045b465a82de29c3f91facbcc92a0e6dc689
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-cyber-security-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-cyber-security-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-cyber-security-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-defense-aerospace-web
@@ -619,11 +619,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-defense-aerospace-web.git
+    url: https://github.com/bookchaowalit-agency/agency-defense-aerospace-web.git
     branch: main
     last_known_commit: 69e778a6122832da5d29f86334c0e32f404d401c
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-defense-aerospace-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-defense-aerospace-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-defense-aerospace-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-energy-web
@@ -631,11 +631,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-energy-web.git
+    url: https://github.com/bookchaowalit-agency/agency-energy-web.git
     branch: main
     last_known_commit: b4145f577be60bdfa6fabe440e2ca289a38774a3
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-energy-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-energy-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-energy-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-governance-risk-web
@@ -643,11 +643,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-governance-risk-web.git
+    url: https://github.com/bookchaowalit-agency/agency-governance-risk-web.git
     branch: main
     last_known_commit: 09ad07ba52d6657bc43ddcae597ae70a1fc430d5
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-governance-risk-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-governance-risk-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-governance-risk-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-healthcare-web
@@ -655,11 +655,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-healthcare-web.git
+    url: https://github.com/bookchaowalit-agency/agency-healthcare-web.git
     branch: main
     last_known_commit: dfc0a22c1976e7d79fbe19e39c173a3822f9d844
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-healthcare-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-healthcare-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-healthcare-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-industrial-infrastructure-web
@@ -667,11 +667,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-industrial-infrastructure-web.git
+    url: https://github.com/bookchaowalit-agency/agency-industrial-infrastructure-web.git
     branch: main
     last_known_commit: 414282f0f53fc16fe50f4a147ecb812ff2f67bd6
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-industrial-infrastructure-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-industrial-infrastructure-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-industrial-infrastructure-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-insurance-risk-transfer-web
@@ -679,11 +679,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-insurance-risk-transfer-web.git
+    url: https://github.com/bookchaowalit-agency/agency-insurance-risk-transfer-web.git
     branch: main
     last_known_commit: 4baa77634c2be50623e50b527c56f85af963a890
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-insurance-risk-transfer-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-insurance-risk-transfer-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-insurance-risk-transfer-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-investment-asset-management-web
@@ -691,11 +691,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-investment-asset-management-web.git
+    url: https://github.com/bookchaowalit-agency/agency-investment-asset-management-web.git
     branch: main
     last_known_commit: ecd2f68b9e0ccb4d5cb617cbd1c5af04dd7cd739
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-investment-asset-management-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-investment-asset-management-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-investment-asset-management-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-legal-web
@@ -703,11 +703,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-legal-web.git
+    url: https://github.com/bookchaowalit-agency/agency-legal-web.git
     branch: main
     last_known_commit: 8f0262d835c4b3d92d1f95406fa9e5752326167b
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-legal-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-legal-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-legal-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-real-estate-web
@@ -715,11 +715,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-real-estate-web.git
+    url: https://github.com/bookchaowalit-agency/agency-real-estate-web.git
     branch: main
     last_known_commit: 533d8c73538a79e6f8edc67b141940600ae047aa
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-real-estate-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-real-estate-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-real-estate-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-science-deep-tech-web
@@ -727,11 +727,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-science-deep-tech-web.git
+    url: https://github.com/bookchaowalit-agency/agency-science-deep-tech-web.git
     branch: main
     last_known_commit: 7ae06d8a75091deb302623b60b1d27bbab57a6e1
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-science-deep-tech-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-science-deep-tech-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-science-deep-tech-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-talent-web
@@ -739,11 +739,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-talent-web.git
+    url: https://github.com/bookchaowalit-agency/agency-talent-web.git
     branch: main
     last_known_commit: 2f197ba6681348a68c63de5b9791e7cba31b48ea
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-talent-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-talent-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-talent-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-technology-web
@@ -751,11 +751,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-technology-web.git
+    url: https://github.com/bookchaowalit-agency/agency-technology-web.git
     branch: main
     last_known_commit: 66f6e4f85daa50d48cde3c7f832f58020d1f8d8e
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-technology-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-technology-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-technology-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: agency-transactions-corporate-finance-web
@@ -763,11 +763,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-transactions-corporate-finance-web.git
+    url: https://github.com/bookchaowalit-agency/agency-transactions-corporate-finance-web.git
     branch: main
     last_known_commit: cf8f4eb364537e38387824d76f8847f2760bc743
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/agency-transactions-corporate-finance-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-transactions-corporate-finance-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-transactions-corporate-finance-web
     notes: "Published public static agency showcase; Vercel and commercial readiness remain separate records."
 
   - id: book-agency-web
@@ -775,11 +775,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/agency-main-web.git
+    url: https://github.com/bookchaowalit-agency/agency-main-web.git
     branch: main
     last_known_commit: 1ae87a488b16f31b3c77ddfe448224e85682723c
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-agency-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-main-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-agency/public/agency-main-web
     notes: "Shared public agency baseline and generator source; not a deployment owner for the 14 vertical sites."
 
   - id: book-discovery-data
