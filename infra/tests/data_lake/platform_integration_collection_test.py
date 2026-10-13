@@ -164,5 +164,128 @@ class CollectionTests(unittest.TestCase):
                     collector.fetch_public(self.config['sources'][0]['url'])
         finally: release.set()
 
+    def test_f1_invalid_urls_and_config_preserve_previous_publication(self):
+        invalid_urls = ['https://example.com/mcp?', 'https://example.com/mcp#', 'https://@example.com/mcp', 'https://example.com/\\mcp', 'https://example.com/\x7f', 'https://example.com/\ud800']
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)/'snapshot.json'
+            output.write_bytes(b'previous')
+            for url in invalid_urls:
+                with self.subTest(url=repr(url)):
+                    output.write_bytes(b'previous')
+                    captures = {**self.raws, 'github-mcp':json.dumps({'github':{'type':'http','url':url}}).encode()}
+                    with self.assertRaises(collector.CollectionError): collector.publish(self.config,captures,STAMP,str(Path(tmp)/'lake'),output)
+                    self.assertEqual(output.read_bytes(),b'previous')
+            for change in ['name', 'app_id', 'transports', 'private_field']:
+                config = copy.deepcopy(self.config)
+                if change == 'name': config['platforms'][0]['name'] = ''
+                if change == 'app_id': config['sources'][0]['aliases']['github'] = ['g'*81]
+                if change == 'transports': config['platforms'][0]['mcp_transports'] = ['stdio','stdio']
+                if change == 'private_field': config['sources'][0]['credential'] = 'denied'
+                with self.subTest(change=change):
+                    with self.assertRaises(collector.CollectionError): collector.publish(config,self.raws,STAMP,str(Path(tmp)/'lake'),output)
+                    self.assertEqual(output.read_bytes(),b'previous')
+
+    def test_f1_oversized_serialized_snapshot_is_not_published(self):
+        config = copy.deepcopy(self.config)
+        config['sources'] = config['sources'][:1]
+        captures = {'codex-plugins': self.raws['codex-plugins']}
+        row = collector.parse_capture(config['sources'][0], captures['codex-plugins'], STAMP)[0]
+        rows = [{**row,'entry_id':str(i),'evidence_url':'https://example.com/'+('x'*2000)} for i in range(2200)]
+        with tempfile.TemporaryDirectory() as tmp, patch.object(collector,'parse_capture',return_value=rows):
+            output = Path(tmp)/'snapshot.json'
+            output.write_bytes(b'previous')
+            with self.assertRaises(collector.CollectionError): collector.publish(config,captures,STAMP,str(Path(tmp)/'lake'),output)
+            self.assertEqual(output.read_bytes(),b'previous')
+            self.assertFalse((Path(tmp)/'lake').exists())
+
+    def test_f2_mapping_change_has_new_batch_and_reconstructable_bronze(self):
+        import pyarrow.parquet as pq
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)/'snapshot.json'
+            lake = str(Path(tmp)/'lake')
+            first = collector.publish(self.config,self.raws,STAMP,lake,output)
+            changed = copy.deepcopy(self.config)
+            changed['sources'][0]['aliases']['github'] = ['notion']
+            second = collector.publish(changed,self.raws,STAMP,lake,output)
+            old_source = first['lineage']['source_manifests'][0]
+            source = second['lineage']['source_manifests'][0]
+            self.assertNotEqual(old_source['manifest_key'],source['manifest_key'])
+            store = ObjectStore(lake)
+            manifest = json.loads(store.get_bytes(source['manifest_key']))
+            records = [json.loads(r['payload_json']) for r in pq.read_table(store.object_uri(manifest['bronze']['key'])).to_pylist()]
+            self.assertEqual({r['app_id'] for r in records},{'notion'})
+            normalized_manifest = json.loads(store.get_bytes(second['lineage']['manifest_key']))
+            normalized = json.loads(store.get_bytes(normalized_manifest['raw']['key']))
+            self.assertEqual(normalized['normalization']['config'],changed)
+            self.assertIn('transform_sha256',manifest['metadata'])
+            self.assertEqual(collector.publish(changed,self.raws,STAMP,lake,output),second)
+
+    def test_f2_wrong_bronze_semantics_block_publication(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)/'snapshot.json'
+            lake = str(Path(tmp)/'lake')
+            first = collector.publish(self.config,self.raws,STAMP,lake,output)
+            before = output.read_bytes()
+            changed = copy.deepcopy(self.config)
+            changed['sources'][0]['aliases']['github'] = ['notion']
+            original = collector.ingest_payload
+            def wrong_source(*args,**kwargs):
+                if kwargs['source'] == 'codex-plugins': return first['lineage']['source_manifests'][0]
+                return original(*args,**kwargs)
+            with patch.object(collector,'ingest_payload',side_effect=wrong_source):
+                with self.assertRaises(collector.CollectionError) as error: collector.publish(changed,self.raws,STAMP,lake,output)
+            self.assertEqual(str(error.exception.__cause__),'bronze_semantic_mismatch')
+            self.assertEqual(output.read_bytes(),before)
+
+    def test_manual_transport_must_be_advertised_by_host(self):
+        config = copy.deepcopy(self.config)
+        config['sources'] = [s for s in config['sources'] if s['id'] == 'github-mcp']
+        captures = {'github-mcp':b'{"github":{"url":"https://example.com/mcp","type":"sse"}}'}
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = collector.publish(config,captures,STAMP,str(Path(tmp)/'lake'),Path(tmp)/'snapshot.json')
+            rows = {r['platform_id']:r['availability'] for r in snapshot['capabilities']}
+            self.assertEqual(rows['codex-cli'],'unknown')
+            self.assertEqual(rows['claude-code'],'available')
+
+    def test_full_serialized_public_contract_rejects_invalid_shapes_and_limits(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            snapshot = collector.publish(self.config,self.raws,STAMP,str(Path(tmp)/'lake'),Path(tmp)/'snapshot.json')
+        self.assertEqual(collector.validate_snapshot_bytes(json.dumps(snapshot).encode()),snapshot)
+        def invalid(change):
+            value = copy.deepcopy(snapshot)
+            change(value)
+            with self.assertRaises(ValueError): collector.validate_snapshot_bytes(json.dumps(value).encode())
+        changes = [
+            lambda s: s.update(private='denied'),
+            lambda s: s.update(platforms=s['platforms']*11),
+            lambda s: s['platforms'][0].update(name='x'*81),
+            lambda s: s['platforms'][0].update(id='x'*81),
+            lambda s: s['platforms'][0].update(mcp_transports=['stdio','stdio']),
+            lambda s: s.update(capabilities=[s['capabilities'][0]]*20001),
+            lambda s: s['capabilities'][0].update(app_id='bad--id'),
+            lambda s: s['capabilities'][0].update(entry_id='x'*129),
+            lambda s: s['capabilities'][0].update(channel='owner'),
+            lambda s: s['capabilities'][0].update(availability='connected'),
+            lambda s: s['capabilities'][0].update(captured_at='2026-10-13T00:06:00Z'),
+            lambda s: s['capabilities'][0].update(health='verified'),
+            lambda s: s['lineage'].update(manifest_sha256='A'*64),
+            lambda s: s['lineage'].update(manifest_key='control/manifests/../unsafe.json'),
+            lambda s: s['lineage'].update(manifest_key='control/manifests/'+('x'*512)),
+            lambda s: s['lineage'].update(source_manifests=s['lineage']['source_manifests']*21),
+            lambda s: s['lineage']['source_manifests'][0].update(source_id='x'*81),
+        ]
+        for i,change in enumerate(changes):
+            with self.subTest(case=i): invalid(change)
+
+    def test_f2_normalization_revision_change_has_distinct_source_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp)/'snapshot.json'
+            lake = str(Path(tmp)/'lake')
+            first = collector.publish(self.config,self.raws,STAMP,lake,output)
+            with patch.object(collector,'NORMALIZATION_REVISION','test.normalize.v3'):
+                second = collector.publish(self.config,self.raws,STAMP,lake,output)
+            self.assertNotEqual(first['lineage']['source_manifests'][0]['manifest_key'],second['lineage']['source_manifests'][0]['manifest_key'])
+            self.assertEqual(first['capabilities'],second['capabilities'])
+
 
 if __name__ == '__main__': unittest.main()

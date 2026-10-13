@@ -21,16 +21,23 @@ if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     from data_lake.ingest import canonical_json, ingest_payload
     from data_lake.storage import ObjectStore
+    from data_lake.platform_snapshot_contract import ENTRY, https_url, identifier, platform as validate_platform, validate_snapshot_bytes
 else:
     from .ingest import canonical_json, ingest_payload
     from .storage import ObjectStore
+    from .platform_snapshot_contract import ENTRY, https_url, identifier, platform as validate_platform, validate_snapshot_bytes
 
 SCHEMA = 'solo-empire.platform-integrations.v1'
 MAX_BYTES = 2 * 1024 * 1024
 DEADLINE_SECONDS = 15
 CONFIG = Path(__file__).resolve().parents[3] / 'systems/ai-data/platform-integration-sources.json'
 PLATFORM_IDS = {'codex-app', 'codex-cli', 'claude-code', 'claude-web', 'claude-desktop'}
-ID = re.compile(r'[a-z0-9][a-z0-9-]{0,95}\Z')
+NORMALIZATION_REVISION = 'platform-integrations.normalize.v2'
+DEFAULT_TRANSPORTS = {
+    'codex-app': {'stdio','streamable_http'}, 'codex-cli': {'stdio','streamable_http'},
+    'claude-code': {'stdio','sse','streamable_http'}, 'claude-web': {'streamable_http'},
+    'claude-desktop': {'stdio','streamable_http'},
+}
 
 
 class CollectionError(ValueError):
@@ -51,11 +58,10 @@ def strict_json(raw):
 
 
 def public_url(value):
-    if not isinstance(value, str) or len(value) > 2048 or any(ord(c) <= 32 for c in value):
-        raise CollectionError('invalid_public_url')
     try:
+        https_url(value)
         p = urlsplit(value)
-        if p.scheme != 'https' or not p.hostname or p.username or p.password or p.query or p.fragment or p.port not in (None, 443):
+        if p.port not in (None, 443):
             raise ValueError()
         if p.hostname == 'localhost' or '.' not in p.hostname or p.hostname.endswith(('.local', '.internal')):
             raise ValueError()
@@ -79,18 +85,24 @@ def capture_timestamp(value):
 
 def load_config(path):
     try:
-        config = strict_json(Path(path).read_bytes())
+        return validate_config(strict_json(Path(path).read_bytes()))
+    except Exception as exc:
+        raise CollectionError('invalid_source_config') from exc
+
+
+def validate_config(config):
+    try:
         if set(config) != {'schema_version', 'platforms', 'sources'} or config['schema_version'] != 'platform-integration-sources.v1': raise ValueError()
         if not isinstance(config['platforms'], list) or {p['id'] for p in config['platforms']} != PLATFORM_IDS or len(config['platforms']) != 5: raise ValueError()
         for p in config['platforms']:
-            if set(p) != {'id', 'name', 'mcp_transports', 'docs_url'} or not isinstance(p['name'], str): raise ValueError()
-            if not isinstance(p['mcp_transports'], list) or not set(p['mcp_transports']) <= {'stdio', 'sse', 'streamable_http'}: raise ValueError()
+            validate_platform(p)
             public_url(p['docs_url'])
-        if not isinstance(config['sources'], list) or not config['sources']: raise ValueError()
+        if not isinstance(config['sources'], list) or not 1 <= len(config['sources']) <= 100: raise ValueError()
         seen = set()
         for s in config['sources']:
             if set(s) != {'id','owner','url','parser','platforms','permission','privacy_class','retention_class','freshness_hours','aliases'}: raise ValueError()
-            if not isinstance(s['id'], str) or not ID.fullmatch(s['id']) or s['id'] in seen: raise ValueError()
+            identifier(s['id'])
+            if s['id'] in seen: raise ValueError()
             seen.add(s['id'])
             public_url(s['url'])
             if urlsplit(s['url']).hostname != 'raw.githubusercontent.com': raise ValueError()
@@ -100,8 +112,10 @@ def load_config(path):
             if s['permission'] != 'public_catalog_read' or s['privacy_class'] != 'public' or s['retention_class'] != 'archival' or s['freshness_hours'] != 24: raise ValueError()
             if not isinstance(s['owner'], str) or not s['owner'] or not isinstance(s['aliases'], dict): raise ValueError()
             for name, app_ids in s['aliases'].items():
-                if not ID.fullmatch(name): raise ValueError()
-                if not isinstance(app_ids, list) or not app_ids or len(set(app_ids)) != len(app_ids) or any(not isinstance(a,str) or not ID.fullmatch(a) for a in app_ids): raise ValueError()
+                if not isinstance(name,str) or not ENTRY.fullmatch(name): raise ValueError()
+                if not isinstance(app_ids, list) or not app_ids or len(set(app_ids)) != len(app_ids): raise ValueError()
+                for app in app_ids: identifier(app)
+        canonical_json(config).encode('utf-8',errors='strict')
         return config
     except Exception as exc:
         raise CollectionError('invalid_source_config') from exc
@@ -162,7 +176,7 @@ def _fetch_public(url):
     except Exception as exc: raise CollectionError('source_fetch_failed') from exc
 
 
-def parse_capture(spec, raw, captured_at):
+def parse_capture(spec, raw, captured_at, platforms=None):
     capture_timestamp(captured_at)
     if not isinstance(raw, bytes) or len(raw) > MAX_BYTES: raise CollectionError('source_too_large')
     value = strict_json(raw)
@@ -176,7 +190,7 @@ def parse_capture(spec, raw, captured_at):
     entries = list(entries.items()) if manual else [(p.get('name') if isinstance(p,dict) else None,p) for p in entries]
     seen, rows = set(), []
     for name, entry in entries:
-        if not isinstance(name,str) or not ID.fullmatch(name) or name in seen or not isinstance(entry,dict): raise CollectionError('invalid_source_schema')
+        if not isinstance(name,str) or not ENTRY.fullmatch(name) or name in seen or not isinstance(entry,dict): raise CollectionError('invalid_source_schema')
         seen.add(name)
         apps = spec['aliases'].get(name, [])
         endpoint = None
@@ -193,6 +207,7 @@ def parse_capture(spec, raw, captured_at):
             if 'url' not in entry: continue  # command sources are never executed or inferred
             endpoint = public_url(entry['url'])
             if entry.get('type', 'http') not in {'http','sse','streamable-http'}: raise CollectionError('invalid_source_schema')
+            transport = 'sse' if entry.get('type') == 'sse' else 'streamable_http'
         else:
             allowed_entry = {'name','description','author','category','source','homepage','policy','interface','platforms','supportedPlatforms','version','tags','displayName','keywords','lspServers','skills','strict'}
             if set(entry) - allowed_entry: raise CollectionError('invalid_source_schema')
@@ -207,6 +222,8 @@ def parse_capture(spec, raw, captured_at):
             if installation != 'AVAILABLE': availability = 'unknown'
         for platform in spec['platforms']:
             state = availability
+            transports = DEFAULT_TRANSPORTS if platforms is None else {p['id']:set(p['mcp_transports']) for p in platforms}
+            if manual and transport not in transports.get(platform,set()): state = 'unknown'
             if restricted and platform not in surfaces and {'codex-app':'desktop','codex-cli':'cli'}.get(platform) not in surfaces: state = 'unknown'
             for app in apps:
                 rows.append({'platform_id':platform,'app_id':app,'channel':'manual_mcp' if manual else 'plugin','availability':state,'entry_id':name,'endpoint_url':endpoint,'evidence_url':spec['url'],'captured_at':captured_at})
@@ -216,7 +233,7 @@ def parse_capture(spec, raw, captured_at):
 def sha(raw): return hashlib.sha256(raw).hexdigest()
 
 
-def verified_manifest(store, result, expected_raw, source_id=None):
+def verified_manifest(store, result, expected_raw, source_id=None, expected_records=None, expected_metadata=None):
     key = result['manifest_key']
     if not key.startswith('control/manifests/') or '..' in key.split('/'): raise CollectionError('invalid_manifest_key')
     body = store.get_bytes(key)
@@ -225,6 +242,12 @@ def verified_manifest(store, result, expected_raw, source_id=None):
         data = store.get_bytes(manifest[part]['key'])
         if sha(data) != manifest[part]['sha256'] or len(data) != manifest[part]['bytes']: raise CollectionError('artifact_corrupt')
         if part == 'raw' and data != expected_raw: raise CollectionError('artifact_corrupt')
+        if part == 'bronze' and expected_records is not None:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+            actual = [strict_json(r['payload_json']) for r in pq.read_table(pa.BufferReader(data)).to_pylist()]
+            if actual != expected_records or manifest['record_count'] != len(expected_records): raise CollectionError('bronze_semantic_mismatch')
+    if expected_metadata is not None and manifest.get('metadata') != expected_metadata: raise CollectionError('transform_metadata_mismatch')
     lineage = {'manifest_key':key,'manifest_sha256':sha(body),'raw_sha256':manifest['raw']['sha256'],'bronze_sha256':manifest['bronze']['sha256']}
     if source_id: lineage = {'source_id':source_id, **lineage}
     return lineage
@@ -232,36 +255,53 @@ def verified_manifest(store, result, expected_raw, source_id=None):
 
 def publish(config, captures, captured_at, lake_uri, output):
     try:
+        validate_config(config)
         capture_timestamp(captured_at)
         if set(captures) != {s['id'] for s in config['sources']}: raise CollectionError('missing_capture')
         # Parse all captures before writing any lake objects. Rejected bytes remain
         # in the caller-owned capture directory, never in a public quarantine.
-        parsed = [(s, parse_capture(s, captures[s['id']], captured_at)) for s in config['sources']]
+        parsed = [(s, parse_capture(s, captures[s['id']], captured_at,config['platforms'])) for s in config['sources']]
         rows = sorted([r for _, rs in parsed for r in rs], key=lambda r:(r['platform_id'],r['app_id'],r['channel'],r['entry_id']))
         grains = [(r['platform_id'],r['app_id'],r['channel'],r['entry_id']) for r in rows]
         if len(grains) != len(set(grains)): raise CollectionError('duplicate_capability')
-        store, sources = ObjectStore(lake_uri), []
+        # Reject all consumer contract/size violations before any ingest. Actual
+        # committed lineage is validated again in the final serialized artifact.
+        dummy = {'manifest_key':'control/manifests/preflight.json','manifest_sha256':'0'*64,'raw_sha256':'0'*64,'bronze_sha256':'0'*64}
+        validate_snapshot_bytes((canonical_json({'schema_version':SCHEMA,'captured_at':captured_at,'platforms':config['platforms'],'capabilities':rows,'lineage':{'dataset':'platform_integrations',**dummy,'source_manifests':[{'source_id':s['id'],**dummy} for s in config['sources']]}})+'\n').encode())
+        store, sources, transforms = ObjectStore(lake_uri), [], []
+        expected_sources = {}
         for spec, records in parsed:
-            result = ingest_payload(captures[spec['id']], records or [{'captured_at':captured_at,'catalog_empty':True}], source=spec['id'], domain='integrations', dataset='platform_integration_captures', data_lake_uri=lake_uri, schema_version=SCHEMA, privacy_class='public', retention_class='archival', event_time_field='captured_at', metadata={'provider':spec['id']+'-'+captured_at,'captured_at':captured_at,'source_url':spec['url']})
-            sources.append(verified_manifest(store,result,captures[spec['id']],spec['id']))
-        normalized = {'schema_version':SCHEMA,'captured_at':captured_at,'platforms':config['platforms'],'capabilities':rows,'source_manifests':sources}
+            records = records or [{'captured_at':captured_at,'catalog_empty':True}]
+            records_sha = sha(canonical_json(records).encode())
+            transform_sha = sha(canonical_json({'revision':NORMALIZATION_REVISION,'source_config':spec,'platforms':config['platforms'],'captured_at':captured_at,'records_sha256':records_sha}).encode())
+            metadata = {'provider':spec['id']+'-'+transform_sha,'captured_at':captured_at,'source_url':spec['url'],'normalization_revision':NORMALIZATION_REVISION,'transform_sha256':transform_sha,'records_sha256':records_sha}
+            result = ingest_payload(captures[spec['id']], records, source=spec['id'], domain='integrations', dataset='platform_integration_captures', data_lake_uri=lake_uri, schema_version=SCHEMA, privacy_class='public', retention_class='archival', event_time_field='captured_at', metadata=metadata)
+            sources.append(verified_manifest(store,result,captures[spec['id']],spec['id'],records,metadata))
+            expected_sources[spec['id']] = (records,metadata)
+            transforms.append({'source_id':spec['id'],'transform_sha256':transform_sha,'records_sha256':records_sha})
+        normalized = {'schema_version':SCHEMA,'captured_at':captured_at,'platforms':config['platforms'],'capabilities':rows,'source_manifests':sources,'normalization':{'revision':NORMALIZATION_REVISION,'config':config,'source_transforms':transforms}}
         raw = (canonical_json(normalized)+'\n').encode()
-        result = ingest_payload(raw, rows or [{'captured_at':captured_at,'catalog_empty':True}], source='platform-integrations',domain='integrations',dataset='platform_integrations',data_lake_uri=lake_uri,schema_version=SCHEMA,privacy_class='public',retention_class='archival',event_time_field='captured_at',metadata={'provider':'platform-integrations-'+captured_at,'captured_at':captured_at})
-        lineage = {'dataset':'platform_integrations',**verified_manifest(store,result,raw),'source_manifests':sources}
+        normalized_records = rows or [{'captured_at':captured_at,'catalog_empty':True}]
+        normalized_metadata = {'provider':'platform-integrations-'+captured_at,'captured_at':captured_at,'normalization_revision':NORMALIZATION_REVISION,'config_sha256':sha(canonical_json(config).encode())}
+        result = ingest_payload(raw, normalized_records, source='platform-integrations',domain='integrations',dataset='platform_integrations',data_lake_uri=lake_uri,schema_version=SCHEMA,privacy_class='public',retention_class='archival',event_time_field='captured_at',metadata=normalized_metadata)
+        lineage = {'dataset':'platform_integrations',**verified_manifest(store,result,raw,expected_records=normalized_records,expected_metadata=normalized_metadata),'source_manifests':sources}
         # Check every reference again immediately before publication.
         for spec, _ in parsed:
             source = next(s for s in sources if s['source_id'] == spec['id'])
-            if verified_manifest(store, source, captures[spec['id']],spec['id']) != source: raise CollectionError('artifact_corrupt')
-        if verified_manifest(store,result,raw) != {k:lineage[k] for k in ('manifest_key','manifest_sha256','raw_sha256','bronze_sha256')}: raise CollectionError('artifact_corrupt')
+            records,metadata = expected_sources[spec['id']]
+            if verified_manifest(store, source, captures[spec['id']],spec['id'],records,metadata) != source: raise CollectionError('artifact_corrupt')
+        if verified_manifest(store,result,raw,expected_records=normalized_records,expected_metadata=normalized_metadata) != {k:lineage[k] for k in ('manifest_key','manifest_sha256','raw_sha256','bronze_sha256')}: raise CollectionError('artifact_corrupt')
         snapshot = {k: normalized[k] for k in ('schema_version','captured_at','platforms','capabilities')}
         snapshot['lineage'] = lineage
+        snapshot_bytes = (canonical_json(snapshot)+'\n').encode('utf-8',errors='strict')
+        validate_snapshot_bytes(snapshot_bytes)
         output = Path(output)
         output.parent.mkdir(parents=True, exist_ok=True)
         temp_name = None
         try:
             with tempfile.NamedTemporaryFile(dir=output.parent,prefix='.platform-integrations-',delete=False) as handle:
                 temp_name = handle.name
-                handle.write((canonical_json(snapshot)+'\n').encode())
+                handle.write(snapshot_bytes)
                 # This artifact contains public metadata and must remain readable
                 # when a root-owned Docker COPY is served by an unprivileged API.
                 os.fchmod(handle.fileno(), 0o644)
