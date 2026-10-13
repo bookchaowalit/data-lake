@@ -49,11 +49,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/polyglot-benchmark-lab.git
+    url: https://github.com/bookchaowalit/devtools-polyglot-benchmark.git
     branch: main
     last_known_commit: 224674d8cba962c01a742bac2a8e1a2365fac8b4
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/polyglot-benchmark-lab
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/polyglot-benchmark-lab
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/devtools-polyglot-benchmark
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/devtools-polyglot-benchmark
     notes: >-
       Public portfolio lab: same workloads per language/framework, contract-checked,
       measured on GitHub-hosted runners (bench.yml commits results back). Results page

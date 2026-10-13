@@ -106,13 +106,13 @@ products:
 
 consumers:
   - id: solo-empire-insights
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/insights-dashboard
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-insights-web
     catalog_files:
       - src/data-products/catalog.ts
       - js/data-products-browser.js
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107, 8108]
   - id: bookchaowalit-portfolio-frontend
-    path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/portfolio-portfolio-web
+    path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/portfolio-site-web
     catalog_files:
       - src/lib/data-products/catalog.ts
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107, 8108]
