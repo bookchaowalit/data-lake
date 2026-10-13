@@ -10,7 +10,7 @@
       "title": "Scholarships",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-scholarship-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-scholarship-data",
       "schema_version": "scholarship.v1",
       "categories": [
         "undergraduate",
@@ -53,7 +53,7 @@
       "title": "Project grants",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grant-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-grant-data",
       "schema_version": "grant.v1",
       "categories": [
         "research",
@@ -100,7 +100,7 @@
       "title": "Startup programs",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-startup-program-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-startup-program-data",
       "schema_version": "startup_program.v1",
       "categories": [
         "accelerator",
@@ -143,7 +143,7 @@
       "title": "Competitions and prizes",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-competition-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-competition-data",
       "schema_version": "competition.v1",
       "categories": [
         "hackathon",
@@ -186,7 +186,7 @@
       "title": "Task bounties",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-bounty-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-bounty-data",
       "schema_version": "bounty.v1",
       "categories": [
         "open-source",
@@ -229,7 +229,7 @@
       "title": "Public and membership benefits",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-benefit-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-benefit-data",
       "schema_version": "benefit.v1",
       "categories": [
         "public-assistance",
@@ -276,7 +276,7 @@
       "title": "Free goods and credits",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-freebie-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-freebie-data",
       "schema_version": "freebie.v1",
       "categories": [
         "software-license",
@@ -323,7 +323,7 @@
       "title": "Deals and savings",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-deal-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-deal-data",
       "schema_version": "deal.v1",
       "categories": [
         "coupon",
@@ -369,7 +369,7 @@
       "title": "Learning programs",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-learning-program-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-learning-program-data",
       "schema_version": "learning_program.v1",
       "categories": [
         "course",
@@ -415,7 +415,7 @@
       "title": "Travel and exchange programs",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-mobility-program-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-mobility-program-data",
       "schema_version": "mobility_program.v1",
       "categories": [
         "travel-grant",
@@ -458,7 +458,7 @@
       "title": "Paid research participation",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-paid-study-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-paid-study-data",
       "schema_version": "paid_study.v1",
       "categories": [
         "user-interview",
@@ -501,7 +501,7 @@
       "title": "Procurement and tenders",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-procurement-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-procurement-data",
       "schema_version": "procurement.v1",
       "categories": [
         "rfp",
@@ -540,7 +540,7 @@
       "title": "Commercial partnerships",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-partnership-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-partnership-data",
       "schema_version": "partnership.v1",
       "categories": [
         "affiliate",
@@ -586,7 +586,7 @@
       "title": "Creator and contributor programs",
       "owner": "bookchaowalit",
       "status": "local-source-pilot",
-      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-creator-program-data",
+      "local_path": "projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-creator-program-data",
       "schema_version": "creator_program.v1",
       "categories": [
         "creator-fund",

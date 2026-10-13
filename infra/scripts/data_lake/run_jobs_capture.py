@@ -39,7 +39,7 @@ if str(SCRIPTS) not in sys.path:
 from data_lake.capture_lock import acquire_lock as _acquire_lock  # noqa: E402
 from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
-JOB_SCRAPING = OWNER_ROOT / "public/book-apps/tools/book-job-scraping"
+JOB_SCRAPING = OWNER_ROOT / "public/book-apps/tools/career-job-scraper"
 JOB_DATA = OWNER_ROOT / "public/book-apps/tools/book-job-data"
 
 
