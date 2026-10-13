@@ -46,10 +46,10 @@ class ProductRuntime:
 
 
 PRODUCTS: tuple[ProductRuntime, ...] = (
-    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101, "public/book-products/market-crypto-data"),
-    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102, "public/book-products/market-stock-data"),
-    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103, "public/book-products/market-fx-rate-data"),
-    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104, "private/book-products/market-defi-yield-data"),
+    ProductRuntime("crypto", "book-crypto-data", "book_crypto.api", 8101, "public/book-products/market-data/sources/crypto"),
+    ProductRuntime("stocks", "book-stock-data", "book_stock.api", 8102, "public/book-products/market-data/sources/stock"),
+    ProductRuntime("fx", "book-fx-data", "book_fx.api", 8103, "public/book-products/market-data/sources/fx"),
+    ProductRuntime("defi", "book-defi-data", "book_defi.api", 8104, "public/book-products/market-data/sources/defi"),
     ProductRuntime("flights", "book-flight-data", "book_flight.api", 8105, "private/book-products/travel-flight-price-data"),
     ProductRuntime("seo", "book-seo-data", "book_seo.api", 8106, "private/book-products/marketing-seo-ranking-data"),
     ProductRuntime("ai_tools", "book-ai-tools-data", "book_ai_tools.api", 8107, "private/book-ai/tech-ai-tools-data"),

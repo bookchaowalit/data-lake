@@ -57,36 +57,16 @@ jobs:
         with:
           python-version: "3.12"
 
-      # These products are intentionally separate Git repositories. They are
-      # never fetched on push/PR by default; enable this only after the repos
-      # are published and PRODUCT_REPO_TOKEN has read-only access when needed.
-      - name: Checkout crypto product source
+      # The crypto, stock and FX products live in one market-data repository
+      # (sources/<name>). It is never fetched on push/PR by default; enable this
+      # only when PRODUCT_REPO_TOKEN has read-only access when needed.
+      - name: Checkout market-data product sources
         if: ${{ inputs.checkout_product_repos }}
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          repository: bookchaowalit/market-crypto-data
+          repository: bookchaowalit/market-data
           ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data
-          token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
-          persist-credentials: false
-
-      - name: Checkout stock product source
-        if: ${{ inputs.checkout_product_repos }}
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          repository: bookchaowalit/market-stock-data
-          ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data
-          token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
-          persist-credentials: false
-
-      - name: Checkout FX product source
-        if: ${{ inputs.checkout_product_repos }}
-        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
-        with:
-          repository: bookchaowalit/market-fx-rate-data
-          ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data
           token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
           persist-credentials: false
 

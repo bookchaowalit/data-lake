@@ -400,7 +400,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data/data/exported/crypto_prices.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/crypto/data/exported/crypto_prices.csv
           max_age_hours: 6
     lake:
       required: true
@@ -437,7 +437,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data/data/exported/stock_prices.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/stock/data/exported/stock_prices.csv
           max_age_hours: 30
     lake:
       required: true
@@ -474,7 +474,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data/data/exported/exchange_rates.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/fx/data/exported/exchange_rates.csv
           max_age_hours: 8
     lake:
       required: true
@@ -511,7 +511,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/market-defi-yield-data/data/exported/defi_yields.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/defi/data/exported/defi_yields.csv
           max_age_hours: 30
     lake:
       required: true

@@ -14,9 +14,9 @@ sys.path.insert(0, str(ROOT / "infra" / "scripts"))
 from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 PRODUCT_SOURCE_ROOTS = (
-    OWNER_ROOT / "public/book-products/market-crypto-data/src/book_crypto",
-    OWNER_ROOT / "public/book-products/market-stock-data/src/book_stock",
-    OWNER_ROOT / "public/book-products/market-fx-rate-data/src/book_fx",
+    OWNER_ROOT / "public/book-products/market-data/sources/crypto/src/book_crypto",
+    OWNER_ROOT / "public/book-products/market-data/sources/stock/src/book_stock",
+    OWNER_ROOT / "public/book-products/market-data/sources/fx/src/book_fx",
 )
 
 from data_lake.ingest import ingest_payload  # noqa: E402

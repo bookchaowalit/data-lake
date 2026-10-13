@@ -24,17 +24,17 @@ PRODUCTS = (
     {
         "name": "book-crypto-data",
         "package": "book_crypto",
-        "relative_path": "github/bookchaowalit/public/book-products/market-crypto-data",
+        "relative_path": "github/bookchaowalit/public/book-products/market-data/sources/crypto",
     },
     {
         "name": "book-stock-data",
         "package": "book_stock",
-        "relative_path": "github/bookchaowalit/public/book-products/market-stock-data",
+        "relative_path": "github/bookchaowalit/public/book-products/market-data/sources/stock",
     },
     {
         "name": "book-fx-data",
         "package": "book_fx",
-        "relative_path": "github/bookchaowalit/public/book-products/market-fx-rate-data",
+        "relative_path": "github/bookchaowalit/public/book-products/market-data/sources/fx",
     },
 )
 

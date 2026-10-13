@@ -64,7 +64,7 @@ MARKET_PRODUCTS: tuple[MarketProduct, ...] = (
     MarketProduct(
         "crypto",
         "book_crypto.ingest",
-        "public/book-products/market-crypto-data",
+        "public/book-products/market-data/sources/crypto",
         "book-crypto-data-feeds",
         "0 */4 * * *",
         ("--coins", "bitcoin,ethereum", "--vs-currencies", "usd,thb", "--no-trending"),
@@ -73,7 +73,7 @@ MARKET_PRODUCTS: tuple[MarketProduct, ...] = (
     MarketProduct(
         "stocks",
         "book_stock.ingest",
-        "public/book-products/market-stock-data",
+        "public/book-products/market-data/sources/stock",
         "book-stock-data-feeds",
         "0 8 * * *",
         ("--symbols", "AAPL,MSFT"),
@@ -82,7 +82,7 @@ MARKET_PRODUCTS: tuple[MarketProduct, ...] = (
     MarketProduct(
         "fx",
         "book_fx.ingest",
-        "public/book-products/market-fx-rate-data",
+        "public/book-products/market-data/sources/fx",
         "book-fx-data-feeds",
         "0 */6 * * *",
         ("--base", "THB", "--symbols", "USD,EUR"),
@@ -91,7 +91,7 @@ MARKET_PRODUCTS: tuple[MarketProduct, ...] = (
     MarketProduct(
         "defi",
         "book_defi.ingest",
-        "private/book-products/market-defi-yield-data",
+        "public/book-products/market-data/sources/defi",
         "book-defi-data-feeds",
         "0 7 * * *",
         ("--chains", "Ethereum,Arbitrum", "--min-apy", "5"),

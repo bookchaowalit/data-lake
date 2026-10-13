@@ -58,28 +58,28 @@ products:
     port: 8101
     schema_version: crypto.v1
     repository: book-crypto-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/crypto
     package: book_crypto
     role: domain_source
   - id: stocks
     port: 8102
     schema_version: stock.v1
     repository: book-stock-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/stock
     package: book_stock
     role: domain_source
   - id: fx
     port: 8103
     schema_version: fx.v1
     repository: book-fx-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/fx
     package: book_fx
     role: domain_source
   - id: defi
     port: 8104
     schema_version: defi.v1
     repository: book-defi-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/market-defi-yield-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-data/sources/defi
     package: book_defi
     role: domain_source
   - id: flights
