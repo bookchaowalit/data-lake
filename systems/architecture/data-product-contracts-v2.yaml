@@ -58,49 +58,49 @@ products:
     port: 8101
     schema_version: crypto.v1
     repository: book-crypto-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data
     package: book_crypto
     role: domain_source
   - id: stocks
     port: 8102
     schema_version: stock.v1
     repository: book-stock-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data
     package: book_stock
     role: domain_source
   - id: fx
     port: 8103
     schema_version: fx.v1
     repository: book-fx-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data
     package: book_fx
     role: domain_source
   - id: defi
     port: 8104
     schema_version: defi.v1
     repository: book-defi-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/market-defi-yield-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-defi-data
     package: book_defi
     role: domain_source
   - id: flights
     port: 8105
     schema_version: flight.v1
     repository: book-flight-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/travel-flight-price-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-flight-data
     package: book_flight
     role: domain_source
   - id: seo
     port: 8106
     schema_version: seo.v1
     repository: book-seo-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/marketing-seo-ranking-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-seo-data
     package: book_seo
     role: domain_source
   - id: ai_tools
     port: 8107
     schema_version: ai_tools.v1
     repository: book-ai-tools-data
-    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/tech-ai-tools-data
+    path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/book-ai-tools-data
     package: book_ai_tools
     role: domain_source
 consumers:

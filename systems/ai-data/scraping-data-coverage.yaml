@@ -11,7 +11,7 @@ scope:
 
 source_registry:
   path: systems/ai-data/scraping-source-registry.snapshot.yaml
-  runtime_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/config/source_coverage.yaml
+  runtime_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/config/source_coverage.yaml
 
 excluded_ingress:
   - id: gmail
@@ -54,19 +54,19 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/job_postings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/job_postings.csv
           max_age_hours: 8
       - job: career_postings
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/career_postings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/career_postings.csv
           max_age_hours: 8
       - job: job_match_filter
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/matched_jobs.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/matched_jobs.csv
           max_age_hours: 30
     lake:
       required: true
@@ -107,25 +107,25 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/github_trending.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/github_trending.csv
           max_age_hours: 36
       - job: hackernews
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/hackernews_top.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/hackernews_top.csv
           max_age_hours: 36
       - job: devto_articles
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/devto_articles.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/devto_articles.csv
           max_age_hours: 36
       - job: producthunt_top
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/producthunt_top.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/producthunt_top.csv
           max_age_hours: 36
     lake:
       required: true
@@ -167,56 +167,56 @@ products:
         quality_note: Direct DDproperty requests return 403 and the current output is search-fallback evidence.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_listings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_listings.csv
           max_age_hours: 36
       - job: ddproperty_condos
         quality_status: blocked
         quality_note: Parser exists but live collection is blocked by a Cloudflare JavaScript challenge.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/ddproperty_condos.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/ddproperty_condos.csv
           max_age_hours: 36
       - job: ennxo_condo_sale
         quality_status: planned
         quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_ennxo_listings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_ennxo_listings.csv
           max_age_hours: 36
       - job: propertyhub_condo_rent
         quality_status: planned
         quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_propertyhub_listings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_propertyhub_listings.csv
           max_age_hours: 36
       - job: livinginsider_condo_rent
         quality_status: planned
         quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_livinginsider_listings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_livinginsider_listings.csv
           max_age_hours: 36
       - job: zmyhome_condo_rent
         quality_status: planned
         quality_note: Source-specific HTML adapter and fixture smoke pass exist, but collection remains planned and disabled pending terms, public-contact storage, and retention review.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_zmyhome_listings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_zmyhome_listings.csv
           max_age_hours: 36
       - job: property_social_leads
         quality_status: conditional
         quality_note: Public search-index metadata only via the official Brave Search API; persisted results require an API plan with explicit storage rights, and every contact/co-agent signal requires human review.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_social_leads.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/property_social_leads.csv
           max_age_hours: 36
       - job: tgcondo_condo_rent
         quality_status: conditional
         quality_note: Public RSS listing metadata is implemented but scheduling remains disabled until source terms, raw-result retention, and any public contact storage basis are documented.
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/tgcondo_condo_rent.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/exported/tgcondo_condo_rent.csv
           max_age_hours: 36
     lake:
       required: true
@@ -257,28 +257,28 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/content-news-scraper/data/exported/notebookspec_tech.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/notebookspec_tech.csv
           max_age_hours: 8
       - job: matichon_news
         inventory_gap: true
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/content-news-scraper/data/exported/matichon_news.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/matichon_news.csv
           max_age_hours: 8
       - job: thai_business_news
         inventory_gap: true
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/content-news-scraper/data/exported/thai_business_news.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/thai_business_news.csv
           max_age_hours: 8
       - job: thai_tech_news
         inventory_gap: true
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/content-news-scraper/data/exported/thai_tech_news.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping/data/exported/thai_tech_news.csv
           max_age_hours: 8
     lake:
       required: true
@@ -320,7 +320,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/commerce-product-scraper/data/exported/kaidee_classifieds.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-ecommerce-scraping/data/exported/kaidee_classifieds.csv
           max_age_hours: 8
     lake:
       required: true
@@ -357,14 +357,14 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/food-restaurant-scraper/data/exported/wongnai_bangkok.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping/data/exported/wongnai_bangkok.csv
           max_age_hours: 192
       - job: wongnai_upcountry
         inventory_gap: true
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/food-restaurant-scraper/data/exported/wongnai_upcountry.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping/data/exported/wongnai_upcountry.csv
           max_age_hours: 192
     lake:
       required: true
@@ -400,7 +400,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data/data/exported/crypto_prices.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data/data/exported/crypto_prices.csv
           max_age_hours: 6
     lake:
       required: true
@@ -437,7 +437,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data/data/exported/stock_prices.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data/data/exported/stock_prices.csv
           max_age_hours: 30
     lake:
       required: true
@@ -474,7 +474,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data/data/exported/exchange_rates.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data/data/exported/exchange_rates.csv
           max_age_hours: 8
     lake:
       required: true
@@ -511,7 +511,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/market-defi-yield-data/data/exported/defi_yields.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-defi-data/data/exported/defi_yields.csv
           max_age_hours: 30
     lake:
       required: true
@@ -548,7 +548,7 @@ products:
         quality_status: blocked
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/travel-flight-price-data/data/exported/flight_prices.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-flight-data/data/exported/flight_prices.csv
           max_age_hours: 192
     lake:
       required: true
@@ -585,7 +585,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/marketing-seo-ranking-data/data/exported/seo_rankings.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-seo-data/data/exported/seo_rankings.csv
           max_age_hours: 30
     lake:
       required: true
@@ -622,7 +622,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/tech-ai-tools-data/data/exported/ai_tools.csv
+            - projects/product/engineering/book-dev/github/bookchaowalit/private/book-ai/book-ai-tools-data/data/exported/ai_tools.csv
           max_age_hours: 30
     lake:
       required: true
@@ -690,7 +690,7 @@ products:
         quality_status: verified
         capture:
           paths:
-            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/briefings/scraper_dashboard.json
+            - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping/data/briefings/scraper_dashboard.json
           max_age_hours: 30
     lake:
       required: false

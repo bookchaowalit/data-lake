@@ -64,9 +64,9 @@ jobs:
         if: ${{ inputs.checkout_product_repos }}
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          repository: bookchaowalit/market-crypto-data
+          repository: bookchaowalit/book-crypto-data
           ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-crypto-data
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-crypto-data
           token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
           persist-credentials: false
 
@@ -74,9 +74,9 @@ jobs:
         if: ${{ inputs.checkout_product_repos }}
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          repository: bookchaowalit/market-stock-data
+          repository: bookchaowalit/book-stock-data
           ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-stock-data
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-stock-data
           token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
           persist-credentials: false
 
@@ -84,9 +84,9 @@ jobs:
         if: ${{ inputs.checkout_product_repos }}
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          repository: bookchaowalit/market-fx-rate-data
+          repository: bookchaowalit/book-fx-data
           ref: ${{ inputs.product_ref || 'main' }}
-          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/market-fx-rate-data
+          path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-products/book-fx-data
           token: ${{ secrets.PRODUCT_REPO_TOKEN || github.token }}
           persist-credentials: false
 

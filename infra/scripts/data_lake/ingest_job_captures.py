@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> int:
         # the parent operator adapter explicit so the default task does not
         # silently omit that source while the public job-data boundary remains
         # collection-only.
-        career_capture = OWNER_ROOT / "public/book-apps/tools/career-job-scraper/data/career_postings.csv"
+        career_capture = OWNER_ROOT / "public/book-apps/tools/book-job-scraping/data/career_postings.csv"
         if career_capture.is_file() and career_capture.resolve() not in inputs:
             inputs.append(career_capture.resolve())
     # The owned ingest records input_path in manifest metadata. Run from the

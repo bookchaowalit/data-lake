@@ -2,8 +2,8 @@ schema_version: solo-empire.scraping-source-registry-snapshot.v1
 kind: public-source-registry-snapshot
 owner: data-product-owner
 provenance:
-  repository: bookchaowalit/career-job-scraper
-  local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper
+  repository: bookchaowalit/book-job-scraping
+  local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping
   commit: 960012276311f4c7c77b8555b4208880ac45cec1
   path: config/source_coverage.yaml
   projection_fields:

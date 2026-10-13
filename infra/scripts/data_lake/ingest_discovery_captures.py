@@ -30,7 +30,7 @@ from data_lake.ingest import ingest_payload  # noqa: E402
 from data_lake.workspace import OWNER_ROOT, relative_display  # noqa: E402
 
 
-SOURCE_ROOT = OWNER_ROOT / "public/book-apps/tools/career-job-scraper/data/exported"
+SOURCE_ROOT = OWNER_ROOT / "public/book-apps/tools/book-job-scraping/data/exported"
 SOURCE_NAME = "book-discovery-data"
 DOMAIN = "discovery"
 SCHEMA_VERSION = "discovery.v1"

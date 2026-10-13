@@ -29,9 +29,9 @@ from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 
 PRODUCT_ROOTS = {
-    "crypto": OWNER_ROOT / "public/book-products/market-crypto-data",
-    "stock": OWNER_ROOT / "public/book-products/market-stock-data",
-    "fx": OWNER_ROOT / "public/book-products/market-fx-rate-data",
+    "crypto": OWNER_ROOT / "public/book-products/book-crypto-data",
+    "stock": OWNER_ROOT / "public/book-products/book-stock-data",
+    "fx": OWNER_ROOT / "public/book-products/book-fx-data",
 }
 
 CRYPTO_SAMPLE = {

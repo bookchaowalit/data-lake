@@ -9,11 +9,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/finance-subscription-cli.git
+    url: https://github.com/bookchaowalit/subscription-intelligence.git
     branch: main
     last_known_commit: 9f4c1a9519a299e3cdac2698f404428c10dd910c
     former_path: products/subscription-intelligence
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/finance-subscription-cli
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/subscription-intelligence
     notes: >-
       Standalone product (Gmail/Calendar read-only subscription intelligence).
       Uses solo-empire infra utils as integration layer only.
@@ -37,11 +37,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/career-job-scraper.git
+    url: https://github.com/bookchaowalit/book-job-scraping.git
     branch: main
     last_known_commit: 95eb515ac663b9e725e411066c605ad937f6f081
     former_path: projects/product/engineering/book-dev/book-job-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-scraping
     notes: "Legacy multi-domain scraper. Target boundary is job discovery; keep existing job pipeline operational while mapping non-job schedules to sibling domain repositories."
 
   - id: polyglot-benchmark-lab
@@ -65,7 +65,7 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/career-job-market-data.git
+    url: https://github.com/bookchaowalit/book-job-data.git
     branch: main
     last_known_commit: 6942dbf9923159b6eea19a87c7160c6186ad99ca
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-job-data
@@ -80,11 +80,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/commerce-product-scraper.git
+    url: https://github.com/bookchaowalit/book-ecommerce-scraping.git
     branch: main
     last_known_commit: 11f8a27e8383ee549497fb7702709a647b61f0f5
     former_path: projects/product/engineering/book-dev/book-ecommerce-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/commerce-product-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-ecommerce-scraping
     notes: "Separate ecommerce domain repository; keep independent for product and price intelligence."
 
   - id: book-news-scraping
@@ -92,11 +92,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/content-news-scraper.git
+    url: https://github.com/bookchaowalit/book-news-scraping.git
     branch: main
     last_known_commit: 2fc01f8ed0a7b27319be3e33b8f7435dbb6e85f7
     former_path: projects/product/engineering/book-dev/book-news-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/content-news-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-news-scraping
     notes: "Separate news domain repository; keep independent for feed ingestion and digest delivery."
 
   - id: book-property-scraping
@@ -104,11 +104,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/realestate-property-scraper.git
+    url: https://github.com/bookchaowalit/book-property-scraping.git
     branch: main
     last_known_commit: f08b87fad684b317e545aeee77e6a32bf4a32454
     former_path: projects/product/engineering/book-dev/book-property-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/realestate-property-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-property-scraping
     notes: "Separate property domain repository; keep independent for listing ingestion and price intelligence."
 
   - id: book-restaurant-scraping
@@ -116,11 +116,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/food-restaurant-scraper.git
+    url: https://github.com/bookchaowalit/book-restaurant-scraping.git
     branch: main
     last_known_commit: 5c7b84648319bd44637420f019e5a6b40659803d
     former_path: projects/product/engineering/book-dev/book-restaurant-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/food-restaurant-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-restaurant-scraping
     notes: "Separate restaurant and food-beverage domain repository; keep independent for discovery and pricing."
 
   - id: book-directory-scraping
@@ -128,11 +128,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/sales-business-directory-scraper.git
+    url: https://github.com/bookchaowalit/book-directory-scraping.git
     branch: main
     last_known_commit: 5a2c53a80aee8a7502e5c509d7b6ac206e32b666
     former_path: projects/product/engineering/book-dev/book-directory-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/sales-business-directory-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-directory-scraping
     notes: "Separate directory and business-discovery domain repository; keep independent for local business data."
 
   - id: book-opportunity-scraping
@@ -140,11 +140,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/opportunity-listing-scraper.git
+    url: https://github.com/bookchaowalit/book-opportunity-scraping.git
     branch: main
     last_known_commit: fed35c7cc84b528fee4c286e336cb819f768e5ec
     former_path: projects/product/engineering/book-dev/book-opportunity-scraping
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/opportunity-listing-scraper
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-opportunity-scraping
     notes: "Legacy multi-domain opportunity scraper. Target decomposition is crypto, stocks, FX, DeFi, flights, SEO, and AI tools; cross-domain synthesis is retired."
 
   - id: pixiu_scraping_facebook_backend
@@ -262,44 +262,44 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/data-catalog-api.git
+    url: https://github.com/bookchaowalit/book-data-api.git
     branch: master
     last_known_commit: 4c0a03f88073ea48cc2021c9ff7cfd8761a072d2
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/data-catalog-api
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/data-catalog-api
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-data-api
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-data-api
 
   - id: book-grounded-ai-assistant
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/ai-grounded-assistant.git
+    url: https://github.com/bookchaowalit/book-grounded-ai-assistant.git
     branch: master
     last_known_commit: 075fed748999fd951faec002e3ad526697e51dcf
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/ai-grounded-assistant
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/ai-grounded-assistant
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grounded-ai-assistant
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grounded-ai-assistant
 
   - id: book-language-tool
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/devtools-booklang-compiler.git
+    url: https://github.com/bookchaowalit/book-language-tool.git
     branch: master
     last_known_commit: 8b2307dde25bf7080b176004c4f9884aa40b97ca
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/devtools-booklang-compiler
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/devtools-booklang-compiler
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-language-tool
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-language-tool
 
   - id: book-migration-validation-workbench
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/data-migration-workbench.git
+    url: https://github.com/bookchaowalit/book-migration-validation-workbench.git
     branch: main
     last_known_commit: dd447db87a5c11b6d3a0095579a7812aaa6b6e9d
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/data-migration-workbench
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/data-migration-workbench
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-migration-validation-workbench
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-migration-validation-workbench
 
   - id: book-storybook
     type: product
@@ -318,55 +318,55 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/finance-ledger-core.git
+    url: https://github.com/bookchaowalit/book-finance-core.git
     branch: main
     last_known_commit: 047c64c0c631acb6d6cd8317f32282eac0eebe89
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/finance-ledger-core
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/finance-ledger-core
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-finance-core
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-finance-core
 
   - id: book-portfolio
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/finance-portfolio-web.git
+    url: https://github.com/bookchaowalit/book-portfolio.git
     branch: master
     last_known_commit: b44e93e7395ef42162191a6aa2842e48684fefd9
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/finance-portfolio-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/finance-portfolio-web
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-portfolio
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/book-portfolio
 
   - id: organization-environment
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/workplace-nodal.git
+    url: https://github.com/bookchaowalit/organization-environment.git
     branch: main
     last_known_commit: 7524bc6c81d43b483970a17785e53e134b32a971
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/workplace-nodal
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/workplace-nodal
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/organization-environment
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/organization-environment
 
   - id: provenchain
     type: product
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/trust-provenchain.git
+    url: https://github.com/bookchaowalit/provenchain.git
     branch: main
     last_known_commit: 143490c185b59503e6d6902b506b8831a5f90835
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/trust-provenchain
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/trust-provenchain
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/provenchain
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/provenchain
 
   - id: solo-empire-backstage
     type: product
     work_type: internal
     client: null
     status: active
-    url: https://github.com/bookchaowalit/platform-developer-portal.git
+    url: https://github.com/bookchaowalit/backstage-portal.git
     branch: master
     last_known_commit: 4f8acb439b9388473d503bc1541629323b17fe79
     former_path: solo-empire-backstage
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/platform-developer-portal
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-products/backstage-portal
     notes: "The sibling Ubuntu checkout is normalized into the Book Dev clone tree for the Windows/WSL migration."
 
   - id: azure-migration-design
@@ -787,11 +787,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit/tech-discovery-data.git
+    url: https://github.com/bookchaowalit/book-discovery-data.git
     branch: main
     last_known_commit: 9bf8715c1b1997726fc4542c4ec008c8dd5f0528
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/tech-discovery-data
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/tech-discovery-data
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-discovery-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/book-discovery-data
     notes: "Published discovery.v1 source boundary; local capture, release and deployment gates remain separate."
 
 # The fourteen discovery products remain local-source pilots even after their GitHub remotes
@@ -805,9 +805,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-scholarship-data.git
+    remote_url: https://github.com/bookchaowalit/book-scholarship-data.git
     last_known_commit: 7e077a58a574968360e7a1ba85a3d93841e033d2
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-scholarship-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-scholarship-data
     schema_version: scholarship.v1
     live_schema_version: scholarship.v2
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
@@ -818,9 +818,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-grant-data.git
+    remote_url: https://github.com/bookchaowalit/book-grant-data.git
     last_known_commit: af2400c5d53d4988f5c0a5f568bb495c32487bd1
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-grant-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-grant-data
     schema_version: grant.v1
     live_schema_version: grant.v2
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
@@ -831,9 +831,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-startup-program-data.git
+    remote_url: https://github.com/bookchaowalit/book-startup-program-data.git
     last_known_commit: 4d75d6ebb2216f675fb26f49edd6756e16c47d0f
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-startup-program-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-startup-program-data
     schema_version: startup_program.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-competition-data
@@ -843,9 +843,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-competition-data.git
+    remote_url: https://github.com/bookchaowalit/book-competition-data.git
     last_known_commit: c84339642ad232137882b544c6a4eba7d8548550
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-competition-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-competition-data
     schema_version: competition.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-bounty-data
@@ -855,9 +855,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-bounty-data.git
+    remote_url: https://github.com/bookchaowalit/book-bounty-data.git
     last_known_commit: fee593f4234888d750eb266daad45dbc143a91f5
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-bounty-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-bounty-data
     schema_version: bounty.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-benefit-data
@@ -867,9 +867,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-benefit-data.git
+    remote_url: https://github.com/bookchaowalit/book-benefit-data.git
     last_known_commit: 18933ab9a88b085d98f6e96205a0b50d6b8dbe4e
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-benefit-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-benefit-data
     schema_version: benefit.v1
     live_schema_version: benefit.v2
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
@@ -880,9 +880,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-freebie-data.git
+    remote_url: https://github.com/bookchaowalit/book-freebie-data.git
     last_known_commit: dafc524b4881f2941c8ad3a5b7e852a05711f8a6
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-freebie-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-freebie-data
     schema_version: freebie.v1
     live_schema_version: freebie.v2
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
@@ -893,9 +893,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-deal-data.git
+    remote_url: https://github.com/bookchaowalit/book-deal-data.git
     last_known_commit: bf082faa151d434ec0013de7911e2d455de0fec5
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-deal-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-deal-data
     schema_version: deal.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-learning-program-data
@@ -905,9 +905,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-learning-program-data.git
+    remote_url: https://github.com/bookchaowalit/book-learning-program-data.git
     last_known_commit: 1a06cd3fc998b8335fc246abc77cf1dbd9eecf53
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-learning-program-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-learning-program-data
     schema_version: learning_program.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-mobility-program-data
@@ -917,9 +917,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-mobility-program-data.git
+    remote_url: https://github.com/bookchaowalit/book-mobility-program-data.git
     last_known_commit: 00b9e090f8b83c624773c044da52b5801729e89b
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-mobility-program-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-mobility-program-data
     schema_version: mobility_program.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-paid-study-data
@@ -929,9 +929,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-paid-study-data.git
+    remote_url: https://github.com/bookchaowalit/book-paid-study-data.git
     last_known_commit: c99a22491172c29612028a7ac663c2976393872b
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-paid-study-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-paid-study-data
     schema_version: paid_study.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-procurement-data
@@ -941,9 +941,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-procurement-data.git
+    remote_url: https://github.com/bookchaowalit/book-procurement-data.git
     last_known_commit: 6ad13061cb7f2c6cd6968a854023194b71c2ecef
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-procurement-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-procurement-data
     schema_version: procurement.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-partnership-data
@@ -953,9 +953,9 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-partnership-data.git
+    remote_url: https://github.com/bookchaowalit/book-partnership-data.git
     last_known_commit: d8ec2e37cb216da9cb06dc5155f4f3b97bb9f683
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-partnership-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-partnership-data
     schema_version: partnership.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json
   - id: book-creator-program-data
@@ -965,8 +965,8 @@ local_staging:
     status: local-source-pilot
     branch: main
     url: null
-    remote_url: https://github.com/bookchaowalit/opportunity-creator-program-data.git
+    remote_url: https://github.com/bookchaowalit/book-creator-program-data.git
     last_known_commit: 3559824ee275776fc8edf09d34b16c2072360e0d
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/opportunity-creator-program-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit/private/book-apps/tools/book-creator-program-data
     schema_version: creator_program.v1
     portfolio_manifest: systems/architecture/discovery-portfolio-v1.json

@@ -19,7 +19,7 @@ from data_lake.workspace import OWNER_ROOT  # noqa: E402
 
 # The cron script belongs to the book-news-scraping repository (found under
 # $SOLO_BOOK_DEV_ROOT); the class skips when it is absent.
-SETUP_CRON = OWNER_ROOT / "public/book-apps/tools/content-news-scraper/setup_cron.sh"
+SETUP_CRON = OWNER_ROOT / "public/book-apps/tools/book-news-scraping/setup_cron.sh"
 
 
 def _script_resolves_control_plane() -> bool:

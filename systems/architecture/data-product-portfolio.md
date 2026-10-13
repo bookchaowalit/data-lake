@@ -121,7 +121,7 @@ The new domain v2 contracts do not alter the frozen contracts below.
 | Capability | Current repository | Target status |
 |---|---|---|
 | Jobs capture | `book-job-scraping` | Collection-only file handoff |
-| Jobs data contract | [`bookchaowalit/career-job-market-data`](https://github.com/bookchaowalit/career-job-market-data) | Public `job.v1` / :8109; Lake-first Track B consumer boundary |
+| Jobs data contract | [`bookchaowalit/book-job-data`](https://github.com/bookchaowalit/book-job-data) | Public `job.v1` / :8109; Lake-first Track B consumer boundary |
 | Ecommerce data | `book-ecommerce-scraping` | Already independent |
 | News data | `book-news-scraping` | `news.v1` Bronze/API on :8108; additive to the frozen v2 map |
 | Technology discovery data | `book-discovery-data` | `discovery.v1` Bronze/API on :8110; additive technology signals from approved captures |
