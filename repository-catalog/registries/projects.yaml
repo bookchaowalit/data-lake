@@ -25,12 +25,12 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-ai/booktrading.git
+    url: https://github.com/bookchaowalit-ai/finance-booktrading.git
     branch: main
     last_known_commit: e29714808de12c8e0f0cf7b8211bd02521d874a0
     former_path: projects/book-dev/book-products/booktrading
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/booktrading
-    notes: "GitHub resolves this remote to bookchaowalit-ai/booktrading; checkout is under the bookchaowalit-ai owner tree."
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-ai/public/book-products/finance-booktrading
+    notes: "GitHub resolves this remote to bookchaowalit-ai/finance-booktrading; checkout is under the bookchaowalit-ai owner tree."
 
   - id: book-job-scraping
     type: scraper
@@ -451,11 +451,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-ai-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-ai.git
     branch: main
     last_known_commit: 8d72509eae8d4b4c44a1f3490fa95b00cd639d6f
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-ai-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-ai-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-ai
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-ai
     notes: "Published Book Platform boundary; runtime extraction and provider integration remain separately gated."
 
   - id: book-api-gateway
@@ -463,11 +463,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-api-gateway.git
+    url: https://github.com/bookchaowalit-backend/platform-api-gateway.git
     branch: main
     last_known_commit: 94b61e58ee7b76c862ddf3885a12af7221912132
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-api-gateway
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-api-gateway
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-api-gateway
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-api-gateway
     notes: "Published Book Platform migration pilot; production route cutover remains separately gated."
 
   - id: book-commerce-platform
@@ -475,11 +475,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-commerce-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-commerce.git
     branch: main
     last_known_commit: 19b82b38e7110131253301956c9e56b35bf00c77
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-commerce-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-commerce-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-commerce
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-commerce
     notes: "Published Book Platform boundary; order and payment parity gates remain open."
 
   - id: book-communication-platform
@@ -487,11 +487,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-communication-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-communication.git
     branch: main
     last_known_commit: b87a0e9cf5dcf3790cfc71f37d8863ba1475a992
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-communication-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-communication-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-communication
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-communication
     notes: "Published Book Platform boundary; provider adapter, retry and opt-out gates remain open."
 
   - id: book-data-platform
@@ -499,11 +499,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-data-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-data.git
     branch: main
     last_known_commit: da67bc4093093fb6870486d7924ac7ded54975fc
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-data-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-data-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-data
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-data
     notes: "Published Book Platform boundary; lake contract, lineage and replay gates remain open."
 
   - id: book-developer-platform
@@ -511,11 +511,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-developer-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-developer.git
     branch: main
     last_known_commit: a65900fd6c5c377ac9e87823d9ba7a74bba4f979
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-developer-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-developer-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-developer
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-developer
     notes: "Published Book Platform boundary for repository, CI/CD and release conventions."
 
   - id: book-identity-platform
@@ -523,11 +523,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-identity-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-identity.git
     branch: main
     last_known_commit: e3edc4fee386983a3c00d6186fa208ee6af60786
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-identity-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-identity-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-identity
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-identity
     notes: "Published Book Platform boundary; tenant, credential and session parity gates remain open."
 
   - id: book-logistics-platform
@@ -535,11 +535,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-logistics-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-logistics.git
     branch: main
     last_known_commit: e4a5f093be20ae2d22bc1989dabaef44f346958c
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-logistics-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-logistics-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-logistics
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-logistics
     notes: "Published Book Platform boundary; carrier sandbox and tracking gates remain open."
 
   - id: book-media-platform
@@ -547,11 +547,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-media-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-media.git
     branch: main
     last_known_commit: 6831d30d979d2b00e9b3b4e400d5474f2eccf211
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-media-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-media-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-media
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-media
     notes: "Published Book Platform boundary; content validation and access-control gates remain open."
 
   - id: book-observability-platform
@@ -559,11 +559,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-observability-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-observability.git
     branch: main
     last_known_commit: 57b74a25787265a894c82e4a1e7e7865803e7b0e
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-observability-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-observability-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-observability
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-observability
     notes: "Published Book Platform boundary; telemetry redaction, retention and alert-drill gates remain open."
 
   - id: book-payment-platform
@@ -571,11 +571,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-payment-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-payment.git
     branch: main
     last_known_commit: 604a3595bd812572cbef8cb9c1899295048b5655
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-payment-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-payment-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-payment
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-payment
     notes: "Published Book Platform boundary; sandbox provider, webhook and ledger gates remain open."
 
   - id: book-security-platform
@@ -583,11 +583,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-security-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-security.git
     branch: main
     last_known_commit: 5c21ff89b10568f5582b781473e17f0f71c1d29e
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-security-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-security-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-security
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-security
     notes: "Published Book Platform boundary; threat-model, least-privilege and recovery gates remain open."
 
   - id: book-workflow-platform
@@ -595,11 +595,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-backend/book-workflow-platform.git
+    url: https://github.com/bookchaowalit-backend/platform-workflow.git
     branch: main
     last_known_commit: 31a34a2725bfc11763f4d0e9b3e1b3b4179ba356
-    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-workflow-platform
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/book-workflow-platform
+    former_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-workflow
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-backend/public/book-backend/platform-workflow
     notes: "Published Book Platform boundary; durable execution and duplicate-job gates remain open."
 
   - id: agency-cyber-security-web
@@ -775,11 +775,11 @@ projects:
     work_type: owned
     client: null
     status: active
-    url: https://github.com/bookchaowalit-website/book-agency-web.git
+    url: https://github.com/bookchaowalit-website/agency-main-web.git
     branch: main
     last_known_commit: 1ae87a488b16f31b3c77ddfe448224e85682723c
     former_path: projects/product/engineering/book-dev/github/bookchaowalit/book-products/book-agency-web
-    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/book-agency-web
+    local_path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-products/agency-main-web
     notes: "Shared public agency baseline and generator source; not a deployment owner for the 14 vertical sites."
 
   - id: book-discovery-data

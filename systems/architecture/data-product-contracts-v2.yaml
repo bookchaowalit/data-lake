@@ -111,7 +111,7 @@ consumers:
       - js/data-products-browser.js
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107]
   - id: bookchaowalit-portfolio-frontend
-    path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/bookchaowalit-portfolio-frontend
+    path: projects/product/engineering/book-dev/github/bookchaowalit-website/public/book-apps/portfolio/portfolio-portfolio-web
     catalog_files:
       - src/lib/data-products/catalog.ts
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107]
