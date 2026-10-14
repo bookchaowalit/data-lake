@@ -114,16 +114,7 @@ jobs:
             python infra/scripts/data_lake/run_jobs_capture.py \
               --lake-uri "${SOLO_EMPIRE_DATA_LAKE_URI}" \
               --lock-path data/jobs-feeds.lock --log-dir data/logs/jobs-capture \
-              --attempts 2 --timeout-seconds 180 --json | tee data/logs/result.json || true
-            # job_matches is produced by a separate profile-filter step, so the
-            # readiness gate stays "attention"; require the postings to land.
-            error="$(jq -r '.result.error // ""' data/logs/result.json)"
-            landed="$(jq -r '.result.counts.ingested_records // 0' data/logs/result.json)"
-            echo "jobs ingested_records=${landed} error=${error:-none}"
-            if [ -n "${error}" ] && { [ "${error}" != "readiness_failed" ] || [ "${landed}" -le 0 ]; }; then
-              echo "::error::jobs capture failed: ${error}"
-              exit 1
-            fi
+              --attempts 2 --timeout-seconds 180 --json
           else
             python infra/scripts/data_lake/run_market_capture.py --product "${FEED}" \
               --lake-uri "${SOLO_EMPIRE_DATA_LAKE_URI}" \
