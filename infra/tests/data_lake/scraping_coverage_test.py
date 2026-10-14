@@ -214,6 +214,29 @@ class ScrapingCoverageTests(unittest.TestCase):
         self.assertEqual(report["summary"]["end_to_end_ready"], 0)
         self.assertIn("lake", {gap["code"] for gap in report["gaps"]})
 
+    def test_optional_lake_dataset_does_not_hold_back_freshness(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            requirements, source, config, _ = self._fixtures(root)
+            held = {
+                "id": "held",
+                "paths": ["data/lake/bronze/domain=demo/dataset=held/part.parquet"],
+                "max_age_hours": 4,
+            }
+            config["products"][0]["lake"]["datasets"].append(held)
+            self._write_yaml(requirements, config)
+            required = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+            held["required"] = False
+            self._write_yaml(requirements, config)
+            optional = build_report(root, requirements, source, crontab_text="# book-demo-data-feeds", now=NOW)
+        self.assertEqual(required["products"][0]["lake_status"], "partial")
+        self.assertEqual(optional["validation_errors"], [])
+        self.assertEqual(optional["products"][0]["lake_status"], "fresh")
+        self.assertEqual(
+            [(item["id"], item["required"], item["status"]) for item in optional["products"][0]["lake_datasets"]],
+            [("demo", True, "fresh"), ("held", False, "missing")],
+        )
+
     def test_copied_lake_files_do_not_refresh_committed_ingest_time(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
