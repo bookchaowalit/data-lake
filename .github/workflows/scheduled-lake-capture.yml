@@ -1,6 +1,7 @@
 name: Scheduled Lake Capture
 
-# Hosted copy of the host cron (setup_market_cron.sh / setup_jobs_cron.sh):
+# Hosted copy of the host cron (setup_market_cron.sh / setup_jobs_cron.sh /
+# lake-capture.sh property):
 # runs the bounded free-API capture runners and writes Bronze straight to the
 # R2 lake, so collection continues when the workstation is off.
 #
@@ -15,13 +16,14 @@ on:
     - cron: "0 */6 * * *"   # fx
     - cron: "0 7 * * *"     # defi
     - cron: "30 */6 * * *"  # jobs
+    - cron: "45 */6 * * *"  # property (TG Condo RSS)
   workflow_dispatch:
     inputs:
       feed:
         description: Feed to capture
         required: true
         type: choice
-        options: [crypto, stocks, fx, defi, jobs]
+        options: [crypto, stocks, fx, defi, jobs, property]
 
 permissions:
   contents: read
@@ -56,6 +58,7 @@ jobs:
             fx|"0 */6 * * *") feed=fx ;;
             defi|"0 7 * * *") feed=defi ;;
             jobs|"30 */6 * * *") feed=jobs ;;
+            property|"45 */6 * * *") feed=property ;;
             *) echo "::error::Unknown feed for '${INPUT_FEED:-$SCHEDULE}'"; exit 1 ;;
           esac
           echo "name=${feed}" >> "$GITHUB_OUTPUT"
@@ -73,14 +76,14 @@ jobs:
           path: pipelines
 
       - name: Checkout market-data
-        if: steps.feed.outputs.enabled == 'true' && steps.feed.outputs.name != 'jobs'
+        if: steps.feed.outputs.enabled == 'true' && steps.feed.outputs.name != 'jobs' && steps.feed.outputs.name != 'property'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           repository: bookchaowalit/market-data
           path: book-dev/github/bookchaowalit/public/book-products/market-data
 
       - name: Checkout career-job-scraper
-        if: steps.feed.outputs.enabled == 'true' && steps.feed.outputs.name == 'jobs'
+        if: steps.feed.outputs.enabled == 'true' && (steps.feed.outputs.name == 'jobs' || steps.feed.outputs.name == 'property')
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           repository: bookchaowalit/career-job-scraper
@@ -101,7 +104,7 @@ jobs:
 
       - name: Install bounded capture runtime
         if: steps.feed.outputs.enabled == 'true'
-        run: python -m pip install --disable-pip-version-check duckdb pyarrow httpx beautifulsoup4 python-dotenv
+        run: python -m pip install --disable-pip-version-check duckdb pyarrow httpx beautifulsoup4 feedparser python-dotenv
 
       - name: Capture into R2
         if: steps.feed.outputs.enabled == 'true'
@@ -115,6 +118,11 @@ jobs:
               --lake-uri "${SOLO_EMPIRE_DATA_LAKE_URI}" \
               --lock-path data/jobs-feeds.lock --log-dir data/logs/jobs-capture \
               --attempts 2 --timeout-seconds 180 --json
+          elif [ "${FEED}" = "property" ]; then
+            python infra/scripts/data_lake/run_property_capture.py \
+              --lake-uri "${SOLO_EMPIRE_DATA_LAKE_URI}" \
+              --lock-path data/property-feeds.lock --log-dir data/logs/property-capture \
+              --attempts 2 --timeout-seconds 120 --json
           else
             python infra/scripts/data_lake/run_market_capture.py --product "${FEED}" \
               --lake-uri "${SOLO_EMPIRE_DATA_LAKE_URI}" \

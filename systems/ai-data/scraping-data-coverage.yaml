@@ -159,8 +159,8 @@ products:
     permission:
       status: conditional
       classification: public_source_with_terms
-      basis: Direct DDproperty access is challenged; fallback search-derived rows are not equivalent to verified listing data.
-    cron_tags: [book-scraping-scheduler]
+      basis: Direct DDproperty access is challenged; fallback search-derived rows are not equivalent to verified listing data. Operator approved TG Condo's official condo-rent RSS on 2026-10-14 for listing metadata only (robots.txt allows it, no published terms restrict it, contact enrichment stays disabled); PropertyHub terms forbid automated collection.
+    cron_tags: [book-property-scraping-feeds]
     sources:
       - job: property_listings
         quality_status: degraded
@@ -212,8 +212,8 @@ products:
             - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/property_social_leads.csv
           max_age_hours: 36
       - job: tgcondo_condo_rent
-        quality_status: conditional
-        quality_note: Public RSS listing metadata is implemented but scheduling remains disabled until source terms, raw-result retention, and any public contact storage basis are documented.
+        quality_status: accepted
+        quality_note: Official public RSS listing metadata, one bounded request per run via run_property_capture.py; contact enrichment stays disabled and every contact/lead column is dropped before the lake.
         capture:
           paths:
             - projects/product/engineering/book-dev/github/bookchaowalit/public/book-apps/tools/career-job-scraper/data/exported/tgcondo_condo_rent.csv
@@ -226,6 +226,8 @@ products:
             - data/lake*/**/bronze/domain=property/dataset=property_listings/schema_version=*/ingest_date=*/source=book-property-scraping/*.parquet
           max_age_hours: 36
         - id: property_social_leads
+          # Held until a Brave Search API plan with storage rights is approved.
+          required: false
           paths:
             - data/lake*/**/bronze/domain=property/dataset=property_social_leads/schema_version=*/ingest_date=*/source=book-property-scraping/*.parquet
           max_age_hours: 36

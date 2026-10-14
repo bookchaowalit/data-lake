@@ -658,8 +658,15 @@ def build_report(
                 now,
                 manifest_cache,
             )
-            lake_datasets.append({"id": dataset.get("id"), **evidence})
-        lake_status = _aggregate_evidence(lake_datasets, required=bool(lake_cfg.get("required", True)))
+            lake_datasets.append(
+                {"id": dataset.get("id"), "required": bool(dataset.get("required", True)), **evidence}
+            )
+        # Optional datasets (e.g. a lane still held behind a paid-API or terms
+        # gate) stay visible in the report but do not hold back lake freshness.
+        lake_status = _aggregate_evidence(
+            [item for item in lake_datasets if item["required"]],
+            required=bool(lake_cfg.get("required", True)),
+        )
         delivery = product.get("delivery", {})
         contract = _contract_evidence(root, delivery)
         api_status = _probe_local_port(delivery.get("api_port"), probe_api)

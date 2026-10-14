@@ -70,8 +70,8 @@ sources:
   business: property
   source: TG Condo official public condo-rent RSS
   channel: rss
-  schedule: 0 */6 * * *
-  status: planned
+  schedule: 45 */6 * * *
+  status: active
   owner_repository: book-property-scraping
 - job: property_social_leads
   business: property
