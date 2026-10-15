@@ -143,7 +143,7 @@ class DiscoveryPortfolioTests(unittest.TestCase):
     def test_coverage_command_is_offline_and_filterable(self):
         script = ROOT / 'infra/scripts/discovery/portfolio.py'
         result = subprocess.run(
-            ['python3', str(script), 'coverage', '--domain', 'learning-program'],
+            [sys.executable, str(script), 'coverage', '--domain', 'learning-program'],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         payload = json.loads(result.stdout)
@@ -151,7 +151,7 @@ class DiscoveryPortfolioTests(unittest.TestCase):
         self.assertEqual(payload['summary']['declared_categories'], 6)
         self.assertEqual(payload['summary']['source_registration_required'], 0)
         pending = subprocess.run(
-            ['python3', str(script), 'coverage', '--state', 'source-registration-required'],
+            [sys.executable, str(script), 'coverage', '--state', 'source-registration-required'],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
         pending_payload = json.loads(pending.stdout)
