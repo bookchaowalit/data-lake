@@ -8,6 +8,17 @@
 
 freeze_id: data-product-contracts-v1
 status: superseded
+# Retired rows (BOO-248, 2026-10-15). Values below are kept unchanged per the
+# versioning policy; these ids are NOT live producers/consumers. The opportunity
+# synthesis is retired in data-product-contracts-v2.yaml, its multi-API
+# self-launcher was removed from opportunity-intelligence-data, and a scan of
+# 352 local checkouts found no runtime caller of opportunity.v1 outside the
+# producer repository. Port 8108 is now used by news.v1 (news-data-contract-v1).
+retired_rows:
+  products: [opportunities]
+  consumers: [book-opportunity-intelligence, catalog-cross-match, infra-opportunity-client]
+  retired_on: 2026-10-15
+  reference: BOO-248
 created: 2026-08-04
 host_default: 127.0.0.1
 bind_policy: loopback_only_by_default
@@ -96,6 +107,7 @@ products:
     repository: book-ai-tools-data
     package: book_ai_tools
     role: domain_source
+  # RETIRED 2026-10-15 (BOO-248) — see retired_rows.
   - id: opportunities
     port: 8108
     schema_version: opportunity.v1
@@ -116,6 +128,7 @@ consumers:
     catalog_files:
       - src/lib/data-products/catalog.ts
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107, 8108]
+  # RETIRED 2026-10-15 (BOO-248) — see retired_rows.
   - id: book-opportunity-intelligence
     path: projects/product/engineering/book-dev/github/bookchaowalit/book-apps/tools/book-opportunity-intelligence
     catalog_files:
@@ -123,6 +136,7 @@ consumers:
     must_match_ports: [8101, 8102, 8103, 8104, 8105, 8106, 8107]
     serves_port: 8108
   # Track A — opportunity consumers (must use opportunity.v1 / :8108; never money_opportunities*.csv)
+  # RETIRED 2026-10-15 (BOO-248): both files below no longer exist — see retired_rows.
   - id: catalog-cross-match
     path: catalog/automation
     catalog_files:
