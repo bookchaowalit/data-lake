@@ -40,9 +40,9 @@ from pathlib import Path
 from typing import Any, Protocol
 
 try:
-    from recurring_step import next_due_dates
+    from recurring_step import next_due_dates  # noqa: F401 - re-exported for callers of task_store
 except ImportError:  # imported as a package module
-    from .recurring_step import next_due_dates  # type: ignore[no-redef]
+    from .recurring_step import next_due_dates  # type: ignore[no-redef]  # noqa: F401 - re-exported for callers of task_store
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 TOKEN_DIR = PROJECT_ROOT / ".runtime" / "automation-tokens"

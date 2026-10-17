@@ -1,0 +1,6 @@
+# DevSecOps Phase 1 baseline: pyflakes (F) and syntax errors (E9) only.
+# Ruff 0.17's default rule set reports ~570 findings here, many of which need behaviour review
+# (broad excepts, ValueError vs TypeError, subprocess check=, try/except/pass, loop closures).
+# Widen the selection in a follow-up once those are reviewed.
+[lint]
+select = ["E9", "F"]
