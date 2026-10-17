@@ -222,11 +222,11 @@ def manage(action: str, lake: Path, *, approved: bool = False) -> dict[str, Any]
     if action == "install":
         if not lake.is_dir() or not os.access(lake, os.W_OK):
             raise ValueError("existing_writable_local_lake_required")
-        import bs4
-        import duckdb
-        import feedparser
-        import httpx
-        import pyarrow
+        import bs4  # noqa: F401 - install-time check that the runtime dependency is importable
+        import duckdb  # noqa: F401 - install-time check that the runtime dependency is importable
+        import feedparser  # noqa: F401 - install-time check that the runtime dependency is importable
+        import httpx  # noqa: F401 - install-time check that the runtime dependency is importable
+        import pyarrow  # noqa: F401 - install-time check that the runtime dependency is importable
 
         for job in JOBS:
             require_permission(job)

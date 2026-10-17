@@ -9,7 +9,6 @@ Usage:
 """
 
 import json
-import os
 # Add utils directory to path for imports
 import sys
 from pathlib import Path
@@ -18,7 +17,6 @@ from task_store import ClientConfigError, open_task_store
 from cell_store import CellStoreError, open_cell_store
 import crm_ledger
 from habits_store import HabitsStoreError, open_habits_store, scheduled_on
-import subprocess
 import sys
 from pathlib import Path
 from datetime import date, datetime, timedelta
@@ -241,10 +239,9 @@ def check_alerts(quiet=False, json_mode=False, telegram_mode=False):
             print(f"  ℹ️ {a}")
 
     if not critical and not warnings:
-        print(f"\n  ✅ All systems healthy!")
+        print("\n  ✅ All systems healthy!")
 
     # Summary
-    total_issues = len(critical) + len(warnings)
     print(f"\n  Summary: {len(critical)} critical, {len(warnings)} warnings, {len(info)} info")
     print()
 

@@ -26,7 +26,7 @@ SCRIPTS_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_ROOT / "utils"))
 sys.path.insert(0, str(SCRIPTS_ROOT))
 
-from _env import PROJECT_ROOT  # noqa: E402
+from _env import PROJECT_ROOT  # noqa: E402, F401 - imported for its side effect: _env loads infra/.env on import
 from sync.sync_brave_bookmarks import (  # noqa: E402
     DEFAULT_BOOKMARKS_ROOT,
     discover_profile_files,

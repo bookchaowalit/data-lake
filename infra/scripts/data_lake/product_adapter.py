@@ -280,14 +280,14 @@ def _committed_bronze_keys(
             raise LakeIngestError(f"Invalid Bronze commit manifest for {dataset}") from exc
         if not isinstance(manifest, dict):
             raise LakeIngestError(f"Invalid Bronze commit manifest shape for {dataset}")
-        for field, expected in {
+        for manifest_field, expected in {
             "source": contract.source,
             "domain": contract.domain,
             "schema_version": contract.bronze_schema_version,
         }.items():
-            if manifest.get(field) != expected:
+            if manifest.get(manifest_field) != expected:
                 raise LakeIngestError(
-                    f"Bronze commit manifest identity does not match {dataset}: {field}"
+                    f"Bronze commit manifest identity does not match {dataset}: {manifest_field}"
                 )
         # A source commonly owns more than one dataset (for example prices
         # and history).  Ignore its valid manifests for the other datasets;

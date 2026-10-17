@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import concurrent.futures
-import json
 import statistics
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Optional, Sequence
+from typing import Any, Optional, Sequence
 
 from .base import (
     LakeQueryEngine,
@@ -95,10 +94,10 @@ def compare_results(
     if reference not in results:
         reference = next(iter(results))
     reports: list[EquivalenceReport] = []
-    ref = results[reference]
+    ref = results[reference]  # noqa: F841 - unfinished grouping stub, left for its owner
     queries = sorted({item.query for item in results.values()})
     for query_name in queries:
-        by_engine = {
+        by_engine = {  # noqa: F841 - unfinished grouping stub, left for its owner
             engine: result
             for engine, result in results.items()
             if result.query == query_name

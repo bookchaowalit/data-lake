@@ -16,7 +16,6 @@ sys.path.insert(0, str(ROOT / "infra/scripts"))
 
 from data_lake.ingest_discovery_captures import (  # noqa: E402
     CAPTURES,
-    _capture_lookup,
     map_records,
     normalize_timestamp,
 )
