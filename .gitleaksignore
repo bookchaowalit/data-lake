@@ -1,0 +1,5 @@
+# Reviewed Gitleaks false positives (generic-api-key) in history.
+# Test fixture idempotency key for the diary intake test, not a credential.
+9576e088f78b0f7eea5908bbe484d359beb53d65:data_intake_test.py:generic-api-key:78
+# Job category label tuple returned by the job scraper's classifier, not a credential.
+20e639b512d7c12fdf90feaadf15ff57fd112ea5:import_job_scraper.py:generic-api-key:82
